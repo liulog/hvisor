@@ -101,14 +101,14 @@ impl ArchCpu {
         assert!(this_cpu_id() == self.cpuid);
         //change power_on
         this_cpu_data().activate_gpm();
-        if !self.init {
+        // if !self.init {
             self.init(
                 this_cpu_data().cpu_on_entry,
                 this_cpu_data().id,
                 this_cpu_data().dtb_ipa, //dtb_ipa
             );
-            self.init = true;
-        }
+            // self.init = true;
+        // }
 
         self.power_on = true;
         info!("CPU{} run@{:#x}", self.cpuid, self.sepc);
@@ -123,7 +123,7 @@ impl ArchCpu {
             fn vcpu_arch_entry() -> !;
         }
         assert!(this_cpu_id() == self.cpuid);
-        self.init(0, this_cpu_data().id, this_cpu_data().dtb_ipa);
+        self.power_on = false;
         // reset current cpu -> pc = 0x0 (wfi)
         PARKING_MEMORY_SET.call_once(|| {
             let parking_code: [u8; 4] = [0x73, 0x00, 0x50, 0x10]; // 1: wfi; b 1b
@@ -141,6 +141,7 @@ impl ArchCpu {
             .unwrap();
             gpm
         });
+        self.init(0, this_cpu_data().id, this_cpu_data().dtb_ipa);
         unsafe {
             PARKING_MEMORY_SET.get().unwrap().activate();
             vcpu_arch_entry();

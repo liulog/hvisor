@@ -45,7 +45,30 @@ impl Zone {
     pub fn mmio_init(&mut self, hv_config: &HvArchZoneConfig) {
         //TODO
     }
-    pub fn irq_bitmap_init(&mut self, irqs: &[u32]) {}
+    pub fn irq_bitmap_init(&mut self, irqs: &[u32]) {
+        for irq in irqs {
+            self.insert_irq_to_bitmap(*irq);
+        }
+        for (index, &word) in self.irq_bitmap.iter().enumerate() {
+            for bit_position in 0..32 {
+                if word & (1 << bit_position) != 0 {
+                    let interrupt_number = index * 32 + bit_position;
+                    info!(
+                        "Found interrupt in Zone {} irq_bitmap: {}",
+                        self.id, interrupt_number
+                    );
+                }
+            }
+        }
+    }
+
+    fn insert_irq_to_bitmap(&mut self, irq: u32) {
+        assert!(irq < 1024); // 1024 is the maximum number of interrupts supported by GICv3 (GICD_TYPER.ITLinesNumber)
+        let irq_index = irq / 32;
+        let irq_bit = irq % 32;
+        self.irq_bitmap[irq_index as usize] |= 1 << irq_bit;
+    }
+
     pub fn isa_init(&mut self, fdt: &fdt::Fdt) {
         let cpu_set = self.cpu_set;
         cpu_set.iter().for_each(|cpuid| {

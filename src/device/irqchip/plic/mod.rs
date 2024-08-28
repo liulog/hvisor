@@ -233,6 +233,26 @@ pub fn init_plic(plic_base: usize, plic_size: usize) {
 }
 impl Zone {
     pub fn arch_irqchip_reset(&self) {
-        //TODO
+        info!("Zone {} arch_irqchip_reset", self.id);
+        for (index, &word) in self.irq_bitmap.iter().enumerate() {
+            for bit_position in 0..32 {
+                if word & (1 << bit_position) != 0 {
+                    let interrupt_number = index * 32 + bit_position;
+                    info!("Zone {} irq_id: {}", self.id, interrupt_number);
+                    self.cpu_set.iter().for_each(|cpu_id| {
+                        let context = cpu_id * 2 + 1;
+                        let irq_base = index;
+                        info!("Zone {} irq_base: {}, context: {}", self.id, irq_base, context);
+                        let host_plic = host_plic();
+                        let mut value = host_plic.read().read_enable(context, irq_base);
+                        // clear the enable bit
+                        let mask = !(1 << bit_position);
+                        info!("mask: {:#x}",mask);
+                        value &= mask;
+                        host_plic.write().set_enable(context, irq_base, value);
+                    });
+                }
+            }
+        }
     }
 }
