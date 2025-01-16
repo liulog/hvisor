@@ -10,6 +10,7 @@ use crate::{
         MemoryRegion, MemorySet, VirtAddr, PARKING_INST_PAGE,
     },
 };
+use crate::percpu::this_zone;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -52,8 +53,8 @@ impl ArchCpu {
         //self.sepc = guest_test as usize as u64;
         write_csr!(CSR_SSCRATCH, self as *const _ as usize); //arch cpu pointer
         self.sepc = entry;
-        self.hstatus = 1 << 7 | 2 << 32; //HSTATUS_SPV | HSTATUS_VSXL_64
-        self.sstatus = 1 << 8 | 1 << 63 | 3 << 13 | 3 << 15; //SPP
+        self.hstatus = 1 << 7 | 2 << 32;                // HSTATUS_SPV | HSTATUS_VSXL_64
+        self.sstatus = 1 << 8 | 3 << 13 | 3 << 15;      // SSTATUS_SPP
         self.stack_top = self.stack_top() as usize;
         self.x[10] = cpu_id; //cpu id
         self.x[11] = dtb; //dtb addr
@@ -62,25 +63,38 @@ impl ArchCpu {
         // write_csr!(CSR_SSTATUS, self.sstatus);
         // write_csr!(CSR_HSTATUS, self.hstatus);
         // write_csr!(CSR_SEPC, self.sepc);
+        info!("set hidleg");
+        // set_csr!(CSR_STIMECMP, !0);
         set_csr!(CSR_HIDELEG, 1 << 2 | 1 << 6 | 1 << 10); //HIDELEG_VSSI | HIDELEG_VSTI | HIDELEG_VSEI
+        info!("set hedeleg");
         set_csr!(CSR_HEDELEG, 1 << 8 | 1 << 12 | 1 << 13 | 1 << 15); //HEDELEG_ECU | HEDELEG_IPF | HEDELEG_LPF | HEDELEG_SPF
-        set_csr!(CSR_HCOUNTEREN, 1 << 1); //HCOUNTEREN_TM
                                           //In VU-mode, a counter is not readable unless the applicable bits are set in both hcounteren and scounteren.
-        set_csr!(CSR_SCOUNTEREN, 1 << 1);
-        write_csr!(CSR_HTIMEDELTA, 0);
-        set_csr!(CSR_HENVCFG, 1 << 63);
-        //write_csr!(CSR_VSSTATUS, 1 << 63 | 3 << 13 | 3 << 15); //SSTATUS_SD | SSTATUS_FS_DIRTY | SSTATUS_XS_DIRTY
 
-        // enable all interupts
-        set_csr!(CSR_SIE, 1 << 9 | 1 << 5 | 1 << 1); //SEIE STIE SSIE
-                                                     // write_csr!(CSR_HIE, 1 << 12 | 1 << 10 | 1 << 6 | 1 << 2); //SGEIE VSEIE VSTIE VSSIE
+        if self.sstc{
+            set_csr!(CSR_HENVCFG, 1 << 63);
+            set_csr!(CSR_VSTIMECMP, usize::MAX);    // vstimecmp 处理成 max
+        } else{
+            info!("sstc -> false");
+            // set_csr!(CSR_HENVCFG, 0);
+            // info!("csr_henvcfg done!");
+        }
+        //write_csr!(CSR_VSSTATUS, 1 << 63 | 3 << 13 | 3 << 15); //SSTATUS_SD | SSTATUS_FS_DIRTY | SSTATUS_XS_DIRTY
+        // set_csr!(CSR_SCOUNTEREN, 1 << 1);
+        info!("set hcounteren");
+        set_csr!(CSR_HCOUNTEREN, 1 << 1); //HCOUNTEREN_TM
+        info!("set htimedelta");
+        write_csr!(CSR_HTIMEDELTA, 0);
+
+        info!("set hie");
         write_csr!(CSR_HIE, 0);
+        info!("set vstvec");
         write_csr!(CSR_VSTVEC, 0);
         write_csr!(CSR_VSSCRATCH, 0);
         write_csr!(CSR_VSEPC, 0);
         write_csr!(CSR_VSCAUSE, 0);
         write_csr!(CSR_VSTVAL, 0);
         write_csr!(CSR_HVIP, 0);
+        info!("set vsatp");
         write_csr!(CSR_VSATP, 0);
         // let mut value: usize;
         // value = read_csr!(CSR_SEPC);
@@ -92,6 +106,12 @@ impl ArchCpu {
         // value = read_csr!(CSR_HGATP);
         // info!("CSR_HGATP: {:#x}", value);
         //unreachable!();
+
+        info!("set sie");
+        // enable all interupts
+        set_csr!(CSR_SIE, 1 << 9 | 1 << 5 | 1 << 1); //SEIE STIE SSIE
+        // write_csr!(CSR_HIE, 1 << 12 | 1 << 10 | 1 << 6 | 1 << 2); //SGEIE VSEIE VSTIE VSSIE
+
     }
     pub fn run(&mut self) -> ! {
         extern "C" {
@@ -99,6 +119,10 @@ impl ArchCpu {
         }
 
         assert!(this_cpu_id() == self.cpuid);
+        
+        self.power_on = true;
+        self.sstc = true;
+
         //change power_on
         this_cpu_data().activate_gpm();
         // if !self.init {
@@ -110,9 +134,17 @@ impl ArchCpu {
             // self.init = true;
         // }
 
-        self.power_on = true;
+
         info!("CPU{} run@{:#x}", self.cpuid, self.sepc);
         info!("CPU{:#x?}", self);
+
+        // unsafe {
+        //     let r = this_zone().read().gpm.page_table_query(0x81000000 as GuestPhysAddr);
+        //     info!("query: {:#x?}", r);
+        //     let r = this_zone().read().gpm.page_table_query(0x82708000 as GuestPhysAddr);
+        //     info!("query: {:#x?}", r);
+        // }
+
         unsafe {
             vcpu_arch_entry();
         }

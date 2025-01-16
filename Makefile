@@ -6,7 +6,9 @@ PORT ?= 2333
 MODE ?= debug
 OBJCOPY ?= rust-objcopy --binary-architecture=$(ARCH)
 KDIR ?= ../../linux
-FEATURES ?= platform_qemu
+# FEATURES ?= platform_qemu
+# FEATURES ?= kmh_v2_1core
+FEATURES ?= zcu102
 
 ifeq ($(ARCH),aarch64)
     RUSTC_TARGET := aarch64-unknown-none
@@ -44,8 +46,11 @@ ifeq ($(MODE), release)
 endif
 
 # Targets
-.PHONY: all elf disa run gdb monitor clean tools rootfs
+.PHONY: all elf disa run gdb monitor clean tools rootfs build
 all: $(hvisor_bin)
+
+build: $(hvisor_bin)
+	make -C ~/hypervisor/xiangshan/opensbi-devel CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv PLATFORM=generic FW_PAYLOAD_PATH=/home/jingyu/hypervisor/hvisor-1core/target/riscv64gc-unknown-none-elf/debug/hvisor.bin
 
 elf:
 	cargo build $(build_args)
@@ -54,10 +59,10 @@ disa:
 	readelf -a $(hvisor_elf) > hvisor-elf.txt
 	rust-objdump --disassemble $(hvisor_elf) > hvisor.S
 
-run: all
+run: $(hvisor_bin)
 	$(QEMU) $(QEMU_ARGS)
 
-gdb: all
+gdb: build
 	$(QEMU) $(QEMU_ARGS) -s -S
 
 show-features:
@@ -72,7 +77,7 @@ monitor:
 jlink-server:
 	JLinkGDBServer -select USB -if JTAG -device Cortex-A53 -port 1234
 
-cp: all
+cp: build
 	cp $(hvisor_bin) ~/tftp
 
 clean:

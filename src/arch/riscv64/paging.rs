@@ -52,10 +52,10 @@ impl PageSize {
     pub const fn page_offset(self, addr: usize) -> usize {
         addr & (self as usize - 1)
     }
-    #[allow(unused)]
-    pub const fn is_huge(self) -> bool {
-        matches!(self, Self::Size1G | Self::Size2M)
-    }
+    // #[allow(unused)]
+    // pub const fn is_huge(self) -> bool {
+    //     matches!(self, Self::Size1G | Self::Size2M)
+    // }
 }
 
 impl<VA: Into<usize> + Copy> Page<VA> {
@@ -65,6 +65,7 @@ impl<VA: Into<usize> + Copy> Page<VA> {
     }
 }
 
+// 一个 PTE 应该实现的内容
 pub trait GenericPTE: Debug + Clone {
     /// Returns the physical address mapped by this entry.
     fn addr(&self) -> PhysAddr;
@@ -84,6 +85,8 @@ pub trait GenericPTE: Debug + Clone {
     fn set_table(&mut self, paddr: PhysAddr);
     /// Set this entry to zero.
     fn clear(&mut self);
+
+    // fn set_accessed(&mut self);
 }
 
 const ENTRY_COUNT: usize = 512;
@@ -100,6 +103,7 @@ pub trait GenericPageTableImmut: Sized {
     unsafe fn from_root(root_paddr: PhysAddr) -> Self;
     fn root_paddr(&self) -> PhysAddr;
     fn query(&self, vaddr: Self::VA) -> PagingResult<(PhysAddr, MemFlags, PageSize)>;
+    // fn set_accessed(&self, vaddr: Self::VA) -> PagingResult<(PhysAddr, MemFlags, PageSize)>;
 }
 
 /// A extended mutable page table can change mappings.
@@ -142,21 +146,28 @@ where
     }
 
     fn get_entry_mut(&self, vaddr: VA) -> PagingResult<(&mut PTE, PageSize)> {
+        info!("get_enty");
         let vaddr = vaddr.into();
+        info!("root_paddr: {:#x?}", self.root_paddr());
         let p3 = table_of_mut::<PTE>(self.root_paddr());
         let p3e = &mut p3[p3_index(vaddr)];
+        info!("level3 index: {:#x?}", p3_index(vaddr));
+        info!("level3 pt entry: {:#x?}", p3e);
         if p3e.is_huge() {
             return Ok((p3e, PageSize::Size1G));
         }
-
         let p2 = next_table_mut(p3e)?;
         let p2e = &mut p2[p2_index(vaddr)];
+        info!("level2 index: {:#x?}", p2_index(vaddr));
+        info!("level2 pt entry: {:#x?}", p2e);
         if p2e.is_huge() {
             return Ok((p2e, PageSize::Size2M));
         }
 
         let p1 = next_table_mut(p2e)?;
         let p1e = &mut p1[p1_index(vaddr)];
+        info!("level1 index: {:#x?}", p1_index(vaddr));
+        info!("level1 pt entry: {:#x?}", p1e);
         Ok((p1e, PageSize::Size4K))
     }
 
@@ -234,6 +245,7 @@ where
     }
 
     fn query(&self, vaddr: VA) -> PagingResult<(PhysAddr, MemFlags, PageSize)> {
+        // info!("query: {:#x?}", vaddr.into());
         let (entry, size) = self.get_entry_mut(vaddr)?;
         if entry.is_unused() {
             return Err(PagingError::NotMapped);
@@ -241,6 +253,17 @@ where
         let off = size.page_offset(vaddr.into());
         Ok((entry.addr() + off, entry.flags(), size))
     }
+
+    // fn set_accessed(&self, vaddr: VA) -> PagingResult<(PhysAddr, MemFlags, PageSize)> {
+    //     self.set_accessed();
+    //     // info!("query: {:#x?}", vaddr.into());
+    //     let (entry, size) = self.get_entry_mut(vaddr)?;
+    //     if entry.is_unused() {
+    //         return Err(PagingError::NotMapped);
+    //     }
+    //     let off = size.page_offset(vaddr.into());
+    //     Ok((entry.addr() + off, entry.flags(), size))
+    // }
 }
 
 /// A extended level-3 page table that can change its mapping. It also tracks all intermediate
@@ -340,6 +363,12 @@ where
         entry.set_flags(flags);
         Ok(size)
     }
+
+    // fn accessed(&mut self, vaddr: VA, paddr: PhysAddr) -> PagingResult<PageSize> {
+    //     let (entry, size) = self.inner.get_entry_mut(vaddr)?;
+    //     entry.set_accessed();
+    //     Ok(size)
+    // }
 }
 
 /// A extended level-4 page table implements `GenericPageTable`. It use locks to avoid data
@@ -432,13 +461,13 @@ where
         let mut size = region.size;
         while size > 0 {
             let paddr = region.mapper.map_fn(vaddr);
-            let page_size = if PageSize::Size1G.is_aligned(vaddr)
+            let page_size = if PageSize::Size1G.is_aligned(vaddr)   // vadddr is aligned to 1G，并且 paddr 也是 1G 对齐的
                 && PageSize::Size1G.is_aligned(paddr)
                 && size >= PageSize::Size1G as usize
                 && !region.flags.contains(MemFlags::NO_HUGEPAGES)
             {
                 PageSize::Size1G
-            } else if PageSize::Size2M.is_aligned(vaddr)
+            } else if PageSize::Size2M.is_aligned(vaddr)           // vadddr is aligned to 2M，并且 paddr 也是 2M 对齐的
                 && PageSize::Size2M.is_aligned(paddr)
                 && size >= PageSize::Size2M as usize
                 && !region.flags.contains(MemFlags::NO_HUGEPAGES)
@@ -447,6 +476,8 @@ where
             } else {
                 PageSize::Size4K
             };
+            // let page_size = PageSize::Size4K;
+            // info!("page_size: {:#x?}", page_size);
             let page = Page::new_aligned(vaddr.into(), page_size);
             self.inner
                 .map_page(page, paddr, region.flags)
@@ -493,6 +524,11 @@ where
         let _lock = self.clonee_lock.lock();
         self.inner.update(vaddr, paddr, flags)
     }
+
+    // fn accessed(&mut self, vaddr: VA, paddr: PhysAddr) -> PagingResult<PageSize> {
+    //     let _lock = self.clonee_lock.lock();
+    //     self.inner.update(vaddr, paddr)
+    // }
 
     fn clone(&self) -> Self {
         let mut pt = Self::clone_from(self);

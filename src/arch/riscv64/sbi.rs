@@ -8,6 +8,9 @@ use super::cpu::ArchCpu;
 use crate::arch::csr::*;
 use crate::event::{send_event, IPI_EVENT_WAKEUP};
 use riscv::register::{hvip, sie};
+use crate::vmexitinfo;
+use core::arch::asm;
+
 #[allow(non_snake_case)]
 pub mod SBI_EID {
     pub const BASE_EXTID: usize = 0x10;
@@ -133,10 +136,10 @@ pub fn sbi_vs_handler(current_cpu: &mut ArchCpu) {
         }
         //_ => sbi_ret = sbi_dummy_handler(),
         _ => {
-            warn!(
-                "Pass through SBI call eid {:#x} fid:{:#x} on CPU {}",
-                eid, fid, current_cpu.cpuid
-            );
+            // warn!(
+                // "Pass through SBI call eid {:#x} fid:{:#x} on CPU {}",
+                // eid, fid, current_cpu.cpuid
+            // );
             sbi_ret = sbi_call_5(
                 eid,
                 fid,
@@ -177,28 +180,51 @@ pub fn sbi_call_5(
     SbiRet { error, value }
 }
 
+fn read_time() -> u64 {
+    let time: u64;
+    unsafe {
+        asm!(
+            "csrr {0}, time",
+            out(reg) time,
+        );
+    }
+    time
+}
+
 pub fn sbi_time_handler(fid: usize, current_cpu: &mut ArchCpu) -> SbiRet {
+    vmexitinfo::increment_timer_ecall_global();
     let mut sbi_ret = SbiRet {
         error: SBI_SUCCESS,
         value: 0,
     };
     let stime = current_cpu.x[10];
-    warn!("SBI_SET_TIMER stime: {:#x}", stime);
+    // warn!("SBI_SET_TIMER stime: {:#x}", stime);
     if current_cpu.sstc {
         write_csr!(CSR_VSTIMECMP, stime);
     } else {
+        // warn!("time {:#}", read_time());
+        // 读取 time
+        // warn!("SBI_SET_TIMER stime: {:#x}", stime);
+        // error!("hvip:{:#x}", read_csr!(CSR_HVIP));
+        // write_csr!(CSR_VSTIMECMP, stime);
         set_timer(stime);
+        // write_csr!(CSR_STIMECMP, stime);
+        // error!("hvip:{:#x}", read_csr!(CSR_HVIP));
         unsafe {
             // clear guest timer interrupt pending
             hvip::clear_vstip();
             // enable timer interrupt
             sie::set_stimer();
         }
+        // warn!("time{:#x}", read_time());
+
+        // error!("hvip:{:#x}", read_csr!(CSR_HVIP));
     }
     //debug!("SBI_SET_TIMER stime: {:#x}", stime);
     return sbi_ret;
 }
 pub fn sbi_hsm_handler(fid: usize, current_cpu: &mut ArchCpu) -> SbiRet {
+    vmexitinfo::increment_hsm_ecall_global();
     let mut sbi_ret = SbiRet {
         error: SBI_SUCCESS,
         value: 0,
@@ -235,13 +261,14 @@ pub fn sbi_hsm_start_handler(current_cpu: &mut ArchCpu) -> SbiRet {
         let _lock = target_cpu.ctrl_lock.lock();
         target_cpu.cpu_on_entry = start_addr;
         target_cpu.dtb_ipa = opaque;
-        send_event(cpuid, 0, IPI_EVENT_WAKEUP);
+        send_event(cpuid, 0, IPI_EVENT_WAKEUP); // 发送 IPI 唤醒 CPU, 将
 
         drop(_lock);
     }
     sbi_ret
 }
 pub fn sbi_hvisor_handler(current_cpu: &mut ArchCpu) -> SbiRet {
+    vmexitinfo::increment_hvisor_ecall_global();
     let mut sbi_ret = SbiRet {
         error: SBI_SUCCESS,
         value: 0,

@@ -38,6 +38,7 @@ mod percpu;
 mod platform;
 mod zone;
 mod config;
+mod vmexitinfo;
 
 #[cfg(target_arch = "aarch64")]
 use crate::arch::mm::setup_parange;
@@ -160,9 +161,11 @@ fn rust_main(cpuid: usize, host_dtb: usize) {
 
     ENTERED_CPUS.fetch_add(1, Ordering::SeqCst);
     wait_for(|| PerCpu::entered_cpus() < MAX_CPU_NUM as _);
+    warn!("{}", PerCpu::entered_cpus());
+    warn!("{}", MAX_CPU_NUM);
     assert_eq!(PerCpu::entered_cpus(), MAX_CPU_NUM as _);
 
-    println!(
+    warn!(
         "{} CPU {} has entered.",
         if is_primary { "Primary" } else { "Secondary" },
         cpu.id
@@ -188,6 +191,16 @@ fn rust_main(cpuid: usize, host_dtb: usize) {
     } else {
         wait_for_counter(&INIT_LATE_OK, 1);
     }
+
+    // let address1 = 0x81000000 as *const u8;
+    // let byte1 = unsafe { *address1 };
+    // println!("Address 0x81000000 contains byte: {:#x}", byte1);
+
+    // let address2 = 0x82000000 as *const u8;
+    // let byte2 = unsafe { *address2 };
+    // println!("Address 0x82000000 contains byte: {:#x}", byte2);
+
+    // vmexitinfo::print_global_summary();
 
     cpu.run_vm();
 }

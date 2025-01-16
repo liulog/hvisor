@@ -40,6 +40,10 @@ impl Zone {
         }
 
         info!("VM stage 2 memory set: {:#x?}", self.gpm);
+
+        // unsafe{ info!("{:#x?}",self.gpm.page_table_query(0x81000000)); }
+        // unsafe{ info!("{:#x?}",self.gpm.page_table_query(0x82000000)); }
+
         Ok(())
     }
     pub fn mmio_init(&mut self, hv_config: &HvArchZoneConfig) {

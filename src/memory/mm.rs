@@ -6,7 +6,7 @@ use alloc::collections::btree_map::{BTreeMap, Entry};
 use core::fmt::{Debug, Formatter, Result};
 use spin::Once;
 
-use super::AlignedPage;
+use super::{AlignedPage, GuestPhysAddr};
 use super::{mapper::Mapper, MemFlags};
 use crate::arch::paging::{GenericPageTable, PageSize, PagingResult};
 use crate::arch::Stage2PageTable;
@@ -141,6 +141,14 @@ where
     ) -> PagingResult<(PhysAddr, MemFlags, PageSize)> {
         self.pt.query(vaddr)
     }
+
+    // pub unsafe fn set_accessed(
+    //     &mut self,
+    //     vaddr: PT::VA,
+    // ) -> PagingResult<PageSize> {
+    //     // 为 flags 增加一个 ACCESSED 标志位
+    //     self.pt.accessed(vaddr, vaddr.into())
+    // }
 }
 
 impl<VA: Into<usize> + Copy> Debug for MemoryRegion<VA> {

@@ -9,19 +9,32 @@ pub const PLIC_PRIORITY_BASE: usize = 0x0000;
 pub const PLIC_PENDING_BASE: usize = 0x1000;
 pub const PLIC_ENABLE_BASE: usize = 0x2000;
 
-pub const ROOT_ZONE_DTB_ADDR: u64 = 0x8f000000;
-pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x90000000;
-pub const ROOT_ZONE_ENTRY: u64 = 0x90000000;
-pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1) | (1 << 2);
+pub const ROOT_ZONE_DTB_ADDR: u64 = 0x80f00000;
+pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x81000000;
+pub const ROOT_ZONE_ENTRY: u64 = 0x81000000;
+pub const ROOT_ZONE_CPUS: u64 = 1 << 0;
 
 pub const ROOT_ZONE_NAME: &str = "root-linux";
 
-pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 9] = [
+// root linux's dtb
+#[link_section = ".dtb1"]
+#[used]
+pub static GUEST1_DTB: [u8; include_bytes!("/home/jingyu/hypervisor/hvisor-1core/images/riscv64/devicetree/linux-1core.dtb").len()] =
+    *include_bytes!("/home/jingyu/hypervisor/hvisor-1core/images/riscv64/devicetree/linux-1core.dtb");
+
+// root linux's image
+#[link_section = ".img1"]
+#[used]
+pub static GUEST1: [u8; include_bytes!("/home/jingyu/linux-6.9/arch/riscv/boot/Image").len()] =
+    *include_bytes!("/home/jingyu/linux-6.9/arch/riscv/boot/Image");
+
+// ROOT ZONE 的内存配置
+pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 2] = [
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_RAM,
-        physical_start: 0x83000000,
-        virtual_start: 0x83000000,
-        size: 0x1D000000,
+        physical_start: 0x80f00000,
+        virtual_start: 0x80f00000,
+        size: 0x7f100000,
     }, // ram
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
@@ -29,51 +42,9 @@ pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 9] = [
         virtual_start: 0x10000000,
         size: 0x1000,
     }, // serial
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x30000000,
-        virtual_start: 0x30000000,
-        size: 0x10000000,
-    }, // pci
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10001000,
-        virtual_start: 0x10001000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10002000,
-        virtual_start: 0x10002000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10003000,
-        virtual_start: 0x10003000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10004000,
-        virtual_start: 0x10004000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10005000,
-        virtual_start: 0x10005000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10008000,
-        virtual_start: 0x10008000,
-        size: 0x1000,
-    }, // virtio
 ];
 
-pub const ROOT_ZONE_IRQS: [u32; 11] = [1,2,3,4,5,8,10,33,34,35,36];    // riscv 版本, 这个暂时不影响
+pub const ROOT_ZONE_IRQS: [u32; 1] = [10];    // riscv 版本, 这个暂时不影响
 
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
     plic_base: 0xc000000,

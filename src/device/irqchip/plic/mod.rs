@@ -1,5 +1,10 @@
 use crate::memory::GuestPhysAddr;
+#[cfg(all(feature = "platform_qemu", target_arch = "riscv64"))]
 use crate::platform::qemu_riscv64::*;
+#[cfg(all(feature = "kmh_v2_1core", target_arch = "riscv64"))]
+use crate::platform::kmh_v2_1core::*;
+#[cfg(all(feature = "zcu102", target_arch = "riscv64"))]
+use crate::platform::zcu102::*;
 use crate::zone::Zone;
 use crate::{arch::cpu::ArchCpu, percpu::this_cpu_data};
 use riscv::register::hvip;

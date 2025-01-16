@@ -32,6 +32,8 @@ loongArch64 = "0.2.4"
 [features]
 platform_qemu = []
 platform_imx8mp = []
+kmh_v2_1core = []
+zcu102 = []
 
 [profile.dev]
 panic = "abort"

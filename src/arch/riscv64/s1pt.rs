@@ -108,6 +108,7 @@ impl GenericPTE for PageTableEntry {
         DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::READABLE)
             | DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::WRITABLE)
             | DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::EXECUTABLE)
+        // false
     }
 
     fn set_addr(&mut self, paddr: HostPhysAddr) {

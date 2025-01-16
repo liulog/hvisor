@@ -11,6 +11,18 @@ pub mod qemu_riscv64;
 #[cfg(all(feature = "platform_qemu", target_arch = "riscv64"))]
 use qemu_riscv64::*;
 
+#[cfg(all(feature = "kmh_v2_1core", target_arch = "riscv64"))]
+pub mod kmh_v2_1core;
+
+#[cfg(all(feature = "kmh_v2_1core", target_arch = "riscv64"))]
+use kmh_v2_1core::*;
+
+#[cfg(all(feature = "zcu102", target_arch = "riscv64"))]
+pub mod zcu102;
+
+#[cfg(all(feature = "zcu102", target_arch = "riscv64"))]
+use zcu102::*;
+
 #[cfg(all(feature = "platform_qemu", target_arch = "aarch64"))]
 pub mod qemu_aarch64;
 

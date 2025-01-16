@@ -5,12 +5,20 @@ use crate::arch::sbi::sbi_vs_handler;
 use crate::device::irqchip::plic::{host_plic, vplic_global_emul_handler, vplic_hart_emul_handler};
 use crate::event::check_events;
 use crate::memory::{GuestPhysAddr, HostPhysAddr};
+#[cfg(all(feature = "platform_qemu", target_arch = "riscv64"))]
 use crate::platform::qemu_riscv64::*;
+#[cfg(all(feature = "kmh_v2_1core", target_arch = "riscv64"))]
+use crate::platform::kmh_v2_1core::*;
+#[cfg(all(feature = "zcu102", target_arch = "riscv64"))]
+use crate::platform::zcu102::*;
 use core::arch::{asm, global_asm};
 use riscv::register::mtvec::TrapMode;
 use riscv::register::stvec;
 use riscv::register::{hvip, sie};
 use riscv_decode::Instruction;
+use crate::percpu::this_zone;
+use crate::arch::riscv64::s2pt::DescriptorAttr;
+use crate::vmexitinfo;
 extern "C" {
     fn _hyp_trap_vector();
 }
@@ -41,9 +49,11 @@ pub fn sync_exception_handler(current_cpu: &mut ArchCpu) {
     let trap_code = read_csr!(CSR_SCAUSE);
     trace!("CSR_SCAUSE: {}", trap_code);
     if (read_csr!(CSR_HSTATUS) & (1 << 7)) == 0 {
-        //HSTATUS_SPV
+        // HSTATUS_SPV
         error!("exception from HS mode");
-        //unreachable!();
+        info!("trap_code: {:#x}", trap_code);
+        info!("HSTATUS: {:#x}", read_csr!(CSR_HSTATUS));
+        unreachable!();
     }
     let trap_value = read_csr!(CSR_HTVAL);
     trace!("CSR_HTVAL: {:#x}", trap_value);
@@ -57,19 +67,32 @@ pub fn sync_exception_handler(current_cpu: &mut ArchCpu) {
             error!("ECALL_VU");
         }
         ExceptionType::ECALL_VS => {
+            vmexitinfo::increment_ecall_global();
             trace!("ECALL_VS");
             sbi_vs_handler(current_cpu);
             current_cpu.sepc += 4;
         }
         ExceptionType::LOAD_GUEST_PAGE_FAULT => {
+            vmexitinfo::increment_load_page_fault_global();
             trace!("LOAD_GUEST_PAGE_FAULT");
             guest_page_fault_handler(current_cpu);
         }
         ExceptionType::STORE_GUEST_PAGE_FAULT => {
+            vmexitinfo::increment_store_page_fault_global();
             debug!("STORE_GUEST_PAGE_FAULT");
             guest_page_fault_handler(current_cpu);
         }
+        // 20 =>{
+            // debug!("INSTRCTION_GUEST_PAGE_FAULT");
+            // info!("flag: {}", DescriptorAttr::from_bits_truncate((DescriptorAttr::ACCESSED | DescriptorAttr::WRITABLE | DescriptorAttr::READABLE | DescriptorAttr::USER | DescriptorAttr::EXECUTABLE)));
+            // unsafe {
+            //     let r = this_zone().write().gpm.page_table_update(current_cpu.sepc);
+            // }
+        // }
         _ => {
+            // let value = read_csr!(CSR_HGATP);
+            // info!("CSR_HGATP: {:#x}", value);
+
             warn!(
                 "CPU {} trap {},sepc: {:#x}",
                 current_cpu.cpuid, trap_code, current_cpu.sepc
@@ -80,11 +103,14 @@ pub fn sync_exception_handler(current_cpu: &mut ArchCpu) {
             warn!("trap ins: {:#x}  {:?}", raw_inst, inst);
             // current_cpu.sepc += 4;
             error!("unhandled trap");
-            current_cpu.idle();
+            unreachable!();
+            // current_cpu.idle();                     // 去执行 idle
         }
     }
 }
 pub fn guest_page_fault_handler(current_cpu: &mut ArchCpu) {
+    vmexitinfo::increment_page_fault_global();
+    // info!("guest_page_fault_handler!");
     let addr: HostPhysAddr = read_csr!(CSR_HTVAL) << 2;
     trace!("guest page fault at {:#x}", addr);
     let host_plic_base = host_plic().read().base;
@@ -166,25 +192,31 @@ fn decode_inst(inst: u32) -> (usize, Option<Instruction>) {
 }
 /// handle external interrupt
 pub fn interrupts_arch_handle(current_cpu: &mut ArchCpu) {
+    vmexitinfo::increment_interrupt_global();
     trace!("interrupts_arch_handle @CPU{}", current_cpu.cpuid);
     let trap_code: usize;
     trap_code = read_csr!(CSR_SCAUSE);
     trace!("CSR_SCAUSE: {:#x}", trap_code);
     match trap_code & 0xfff {
         InterruptType::STI => {
-            trace!("STI on CPU{}", current_cpu.cpuid);
+            vmexitinfo::increment_timer_interrupt_global();
+            // trace!("STI on CPU{}", current_cpu.cpuid);
+            // info!("hvip{:#x}", read_csr!(CSR_HVIP));
             unsafe {
-                hvip::set_vstip();
-                sie::clear_stimer();
+                hvip::set_vstip();      // 设置 VSTIP
+                sie::clear_stimer();    // 暂时关闭使能 sie 的中断使能位, 不继续产生中断
             }
-            trace!("sip{:#x}", read_csr!(CSR_SIP));
-            trace!("sie {:#x}", read_csr!(CSR_SIE));
+            // info!("hvip{:#x}", read_csr!(CSR_HVIP));
+            // info!("sip{:#x}", read_csr!(CSR_SIP));
+            // info!("sie {:#x}", read_csr!(CSR_SIE));
         }
         InterruptType::SSI => {
+            vmexitinfo::increment_soft_interrupt_global();
             trace!("SSI on CPU {}", current_cpu.cpuid);
             handle_ssi(current_cpu);
         }
         InterruptType::SEI => {
+            vmexitinfo::increment_external_interrupt_global();
             debug!("SEI on CPU {}", current_cpu.cpuid);
             handle_eirq(current_cpu)
         }
@@ -216,6 +248,7 @@ pub fn handle_eirq(current_cpu: &mut ArchCpu) {
     // set external interrupt pending, which trigger guest interrupt
     unsafe { hvip::set_vseip() };
 }
+
 pub fn handle_ssi(current_cpu: &mut ArchCpu) {
     trace!("handle_ssi");
     let sip = read_csr!(CSR_SIP);

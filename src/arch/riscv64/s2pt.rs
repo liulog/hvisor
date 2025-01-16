@@ -1,6 +1,6 @@
 #![allow(unused)]
 use super::{
-    csr::{write_csr, CSR_HGATP},
+    csr::{write_csr, read_csr,  CSR_HGATP},
     paging::{GenericPTE, Level3PageTable, PagingInstr},
 };
 use bit_field::BitField;
@@ -60,7 +60,7 @@ impl From<DescriptorAttr> for MemFlags {
 impl From<MemFlags> for DescriptorAttr {
     fn from(flags: MemFlags) -> Self {
         let mut attr = Self::empty();
-        attr |= Self::VALID | Self::USER; //stage 2 page table must user
+        attr |= Self::VALID | Self::USER | Self::ACCESSED | Self::DIRTY;       // stage 2 page table must user
         if flags.contains(MemFlags::READ) {
             attr |= Self::READABLE;
         }
@@ -80,8 +80,8 @@ impl From<MemFlags> for DescriptorAttr {
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct PageTableEntry(pub u64);
-const PTE_PPN_MASK: u64 = 0x3F_FFFF_FFFF_FC00; //[10..53]ppn
-const PPN_MASK: u64 = 0xFF_FFFF_FFFF_F000; //[12..55]ppn
+const PTE_PPN_MASK: u64 = 0x3F_FFFF_FFFF_FC00; //[10..53]ppn     PTE 页表项中的具体格式
+const PPN_MASK: u64 = 0xFF_FFFF_FFFF_F000; //[12..55]ppn         56bit物理地址的具体格式
 impl PageTableEntry {
     pub const fn empty() -> Self {
         Self(0)
@@ -105,21 +105,31 @@ impl GenericPTE for PageTableEntry {
         DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::VALID)
     }
 
+    // 对于 RISC-V 来说. 当 XWR 均为 0, 并且 V 为 1 时，并且不是 leaf, 那么它就是一个 huge_page
     fn is_huge(&self) -> bool {
-        DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::READABLE)
+        self.is_present() & (DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::READABLE)
             | DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::WRITABLE)
-            | DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::EXECUTABLE)
+            | DescriptorAttr::from_bits_truncate(self.0).contains(DescriptorAttr::EXECUTABLE))
     }
 
     fn set_addr(&mut self, paddr: HostPhysAddr) {
+        // 设置 PTE 中的 PPN
         self.0 = (self.0.get_bits(0..7)) | ((paddr as u64 & PPN_MASK) >> 2);
     }
 
     fn set_flags(&mut self, flags: MemFlags) {
+        // 设置 PTE 中的 flags
         let mut attr: DescriptorAttr = flags.into();
-
+        attr |= DescriptorAttr::VALID;
         self.0 = (attr.bits() & !PTE_PPN_MASK as u64) | (self.0 as u64 & PTE_PPN_MASK as u64);
     }
+
+    // fn set_accessed(&mut self) {
+    //     // 设置 PTE 中的 flags
+    //     let mut attr: DescriptorAttr = flags.into();
+    //     attr |= DescriptorAttr::ACCESSED;
+    //     self.0 = (attr.bits() & !PTE_PPN_MASK as u64) | (self.0 as u64 & PTE_PPN_MASK as u64);
+    // }
 
     fn set_table(&mut self, paddr: HostPhysAddr) {
         self.set_addr(paddr);
@@ -153,17 +163,21 @@ pub struct S2PTInstr;
 
 impl PagingInstr for S2PTInstr {
     unsafe fn activate(root_paddr: HostPhysAddr) {
-        println!("guest stage2 PT activate");
+        info!("guest stage2 PT activate");
         unsafe {
-            let mut bits = 0usize;
-            let mode: usize = 8; //Mode::Sv39x4
+            let mut bits: usize = 0;
+            let mode: usize = 8;    // Mode::Sv39x4
+                                    // 设置为 0/9/10 都没有问题，设置为 8 会出现问题, 疑惑, 为什么开了 Sv48x4 或者 Sv57x4, 则能够执行一点呢？ 有问题啊
             let vmid: usize = 0;
             bits.set_bits(60..64, mode as usize);
             bits.set_bits(44..58, vmid);
+            // 设置 root_paddr
             bits.set_bits(0..44, root_paddr >> 12);
-            println!("HGATP: {:#x?}", bits);
+            info!("HGATP: {:#x?}", bits);
             write_csr!(CSR_HGATP, bits);
-            //core::arch::asm!("hsfence.vvma");//not supported in rust
+            let hgatp: usize = read_csr!(CSR_HGATP);
+            info!("HGATP after activation: {:#x?}", hgatp);
+            // core::arch::asm!("hfence.gvma");                            //not supported in rust
         }
     }
 

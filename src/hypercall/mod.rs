@@ -13,6 +13,7 @@ use core::convert::TryFrom;
 use core::sync::atomic::{fence, Ordering};
 
 use numeric_enum_macro::numeric_enum;
+use crate::vmexitinfo;
 
 numeric_enum! {
     #[repr(u64)]
@@ -23,6 +24,8 @@ numeric_enum! {
         HvZoneStart = 2,
         HvZoneShutdown = 3,
         HvZoneList = 4,
+        HvCounterPrint = 5,
+        HvCounterClear = 6
     }
 }
 pub const SGI_IPI_ID: u64 = 7;
@@ -53,6 +56,8 @@ impl<'a> HyperCall<'a> {
                 HyperCallCode::HvZoneStart => self.hv_zone_start(&*(arg0 as *const HvZoneConfig)),
                 HyperCallCode::HvZoneShutdown => self.hv_zone_shutdown(arg0),
                 HyperCallCode::HvZoneList => self.hv_zone_list(&mut *(arg0 as *mut ZoneInfo), arg1),
+                HyperCallCode::HvCounterPrint => vmexitinfo::print_global_summary(),
+                HyperCallCode::HvCounterClear => vmexitinfo::clear_global_summary(),
             }
         }
     }
