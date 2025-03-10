@@ -1,8 +1,10 @@
+use core::ptr;
 use super::cpu::ArchCpu;
 use crate::arch::csr::read_csr;
 use crate::arch::csr::*;
 use crate::arch::sbi::sbi_vs_handler;
-use crate::device::irqchip::plic::{host_plic, vplic_global_emul_handler, vplic_hart_emul_handler};
+// use crate::device::irqchip::plic::{host_plic, vplic_global_emul_handler, vplic_hart_emul_handler};
+use crate::device::irqchip::aia::aplic::{host_aplic, vaplic_emul_handler};
 use crate::event::check_events;
 use crate::memory::{GuestPhysAddr, HostPhysAddr};
 #[cfg(all(feature = "platform_qemu", target_arch = "riscv64"))]
@@ -45,14 +47,48 @@ pub fn install_trap_vector() {
     }
 }
 pub fn sync_exception_handler(current_cpu: &mut ArchCpu) {
+    // info!("sync_exception_handler");
     trace!("current_cpu: stack{:#x}", current_cpu.stack_top);
     let trap_code = read_csr!(CSR_SCAUSE);
-    trace!("CSR_SCAUSE: {}", trap_code);
-    if (read_csr!(CSR_HSTATUS) & (1 << 7)) == 0 {
+    // info!("CSR_SCAUSE: {}", trap_code);
+
+    // if trap_code == 10 { // 10 号异常（环境调用）
+        // let hedeleg: usize;
+        // let hgatp: usize;
+        // let htval: usize;
+        // let htinst: usize;
+
+        // 读取虚拟化相关寄存器
+        // unsafe {
+        //     asm!(
+        //         "csrr {}, 0x602",  // hedeleg
+        //         "csrr {}, 0x680",  // hgatp
+        //         "csrr {}, 0x643",  // htval
+        //         "csrr {}, 0x64A",  // htinst
+        //         out(reg) hedeleg,
+        //         out(reg) hgatp,
+        //         out(reg) htval,
+        //         out(reg) htinst,
+        //     );
+        // }
+
+        // 打印寄存器信息
+        // println!("=== Virtualization Registers Dump ===");
+        // println!("hstatus  = {:#018x}", current_cpu.hstatus);
+        // println!("hedeleg  = {:#018x}", hedeleg);
+        // println!("hgatp    = {:#018x}", hgatp);
+        // println!("htval    = {:#018x}", htval);
+        // println!("htinst   = {:#018x}", htinst);
+        // println!("sstatus  = {:#018x}", current_cpu.sstatus);
+        // println!("sepc     = {:#018x}", current_cpu.sepc);
+    // }
+
+
+    if (current_cpu.hstatus & (1 << 7)) == 0 {
         // HSTATUS_SPV
         error!("exception from HS mode");
         info!("trap_code: {:#x}", trap_code);
-        info!("HSTATUS: {:#x}", read_csr!(CSR_HSTATUS));
+        info!("HSTATUS: {:#x}", current_cpu.hstatus);
         unreachable!();
     }
     let trap_value = read_csr!(CSR_HTVAL);
@@ -74,24 +110,23 @@ pub fn sync_exception_handler(current_cpu: &mut ArchCpu) {
         }
         ExceptionType::LOAD_GUEST_PAGE_FAULT => {
             vmexitinfo::increment_load_page_fault_global();
-            trace!("LOAD_GUEST_PAGE_FAULT");
+            // info!("LOAD_GUEST_PAGE_FAULT");
             guest_page_fault_handler(current_cpu);
         }
         ExceptionType::STORE_GUEST_PAGE_FAULT => {
             vmexitinfo::increment_store_page_fault_global();
-            debug!("STORE_GUEST_PAGE_FAULT");
+            // info!("STORE_GUEST_PAGE_FAULT");
             guest_page_fault_handler(current_cpu);
         }
-        // 20 =>{
-            // debug!("INSTRCTION_GUEST_PAGE_FAULT");
-            // info!("flag: {}", DescriptorAttr::from_bits_truncate((DescriptorAttr::ACCESSED | DescriptorAttr::WRITABLE | DescriptorAttr::READABLE | DescriptorAttr::USER | DescriptorAttr::EXECUTABLE)));
-            // unsafe {
-            //     let r = this_zone().write().gpm.page_table_update(current_cpu.sepc);
-            // }
-        // }
         _ => {
             // let value = read_csr!(CSR_HGATP);
             // info!("CSR_HGATP: {:#x}", value);
+
+            // let address = 0x81a05f32 as *const u32; // 定义指针指向 0x81001048
+            // unsafe {
+            //     let value = ptr::read_volatile(address); // 读取地址处的 4 字节数据
+            //     println!("Value at 0x81001048: 0x{:08X}", value); // 以 16 进制打印
+            // }
 
             warn!(
                 "CPU {} trap {},sepc: {:#x}",
@@ -113,46 +148,78 @@ pub fn guest_page_fault_handler(current_cpu: &mut ArchCpu) {
     // info!("guest_page_fault_handler!");
     let addr: HostPhysAddr = read_csr!(CSR_HTVAL) << 2;
     trace!("guest page fault at {:#x}", addr);
-    let host_plic_base = host_plic().read().base;
-    let mut ins_size: usize = 0;
-    //TODO: get plic addr range from dtb or vpliv object
-    if addr >= host_plic_base && addr < host_plic_base + PLIC_TOTAL_SIZE {
-        trace!("PLIC access");
+    // let host_plic_base = host_plic().read().base;
+    // let mut ins_size: usize = 0;
+    // //TODO: get plic addr range from dtb or vpliv object
+    // if addr >= host_plic_base && addr < host_plic_base + PLIC_TOTAL_SIZE {
+    //     trace!("PLIC access");
+    //     let mut inst: u32 = read_csr!(CSR_HTINST) as u32;
+    //     if inst == 0 {
+    //         let inst_addr: GuestPhysAddr = current_cpu.sepc;
+    //         //load real ins from guest memmory
+    //         inst = read_inst(inst_addr);
+    //         ins_size = if inst & 0x3 == 3 { 4 } else { 2 };
+    //     } else if inst == 0x3020 || inst == 0x3000 {
+    //         // TODO: we should reinject this in the guest as a fault access
+    //         error!("fault on 1st stage page table walk");
+    //     } else {
+    //         // If htinst is valid and is not a pseudo instructon make sure
+    //         // the opcode is valid even if it was a compressed instruction,
+    //         // but before save the real instruction size.
+    //         ins_size = if (inst) & 0x2 == 0 { 2 } else { 4 };
+    //         inst = inst | 0b10;
+    //         // error!("unhandled guest page fault at {:#x}", addr);
+    //         // panic!("inst{:#x}", inst);
+    //     }
+    //     //TODO: decode inst to real instruction
+    //     let (_len, inst) = decode_inst(inst);
+    //     if let Some(inst) = inst {
+    //         if addr >= host_plic_base + PLIC_GLOBAL_SIZE {
+    //             vplic_hart_emul_handler(current_cpu, addr, inst);
+    //         } else {
+    //             vplic_global_emul_handler(current_cpu, addr, inst);
+    //         }
+    //         current_cpu.sepc += ins_size;
+    //     } else {
+    //         error!("Invalid instruction at {:#x}", current_cpu.sepc);
+    //         panic!();
+    //     }
+    // } else {
+    //     panic!("CPU {} unmaped memmory at {:#x}", current_cpu.cpuid, addr);
+    // }
+
+    let host_aplic_base = host_aplic().read().base;
+    let host_aplic_size = host_aplic().read().size;
+
+    if addr >= host_aplic_base && addr < host_aplic_base + host_aplic_size {
+        trace!("APLIC access");
         let mut inst: u32 = read_csr!(CSR_HTINST) as u32;
+        let mut ins_size: usize = 0;
         if inst == 0 {
             let inst_addr: GuestPhysAddr = current_cpu.sepc;
-            //load real ins from guest memmory
             inst = read_inst(inst_addr);
             ins_size = if inst & 0x3 == 3 { 4 } else { 2 };
         } else if inst == 0x3020 || inst == 0x3000 {
-            // TODO: we should reinject this in the guest as a fault access
             error!("fault on 1st stage page table walk");
         } else {
-            // If htinst is valid and is not a pseudo instructon make sure
-            // the opcode is valid even if it was a compressed instruction,
-            // but before save the real instruction size.
             ins_size = if (inst) & 0x2 == 0 { 2 } else { 4 };
             inst = inst | 0b10;
             // error!("unhandled guest page fault at {:#x}", addr);
-            // panic!("inst{:#x}", inst);
         }
-        //TODO: decode inst to real instruction
-        let (_len, inst) = decode_inst(inst);
+        // let (len, inst) = decode_inst(inst);
+        let (_, inst) = decode_inst(inst); 
+        
         if let Some(inst) = inst {
-            if addr >= host_plic_base + PLIC_GLOBAL_SIZE {
-                vplic_hart_emul_handler(current_cpu, addr, inst);
-            } else {
-                vplic_global_emul_handler(current_cpu, addr, inst);
-            }
+            vaplic_emul_handler(current_cpu, addr, inst);
             current_cpu.sepc += ins_size;
         } else {
             error!("Invalid instruction at {:#x}", current_cpu.sepc);
-            panic!();
         }
     } else {
         panic!("CPU {} unmaped memmory at {:#x}", current_cpu.cpuid, addr);
     }
 }
+
 fn read_inst(addr: GuestPhysAddr) -> u32 {
     let mut ins: u32;
     if addr & 0b1 != 0 {
@@ -168,6 +235,7 @@ fn read_inst(addr: GuestPhysAddr) -> u32 {
     }
     ins
 }
+
 fn hlvxhu(addr: GuestPhysAddr) -> u64 {
     let mut value: u64;
     unsafe {
@@ -179,6 +247,7 @@ fn hlvxhu(addr: GuestPhysAddr) -> u64 {
     }
     value
 }
+
 /// decode risc-v instruction, return (inst len, inst)
 fn decode_inst(inst: u32) -> (usize, Option<Instruction>) {
     let i1 = inst as u16;
@@ -196,7 +265,7 @@ pub fn interrupts_arch_handle(current_cpu: &mut ArchCpu) {
     trace!("interrupts_arch_handle @CPU{}", current_cpu.cpuid);
     let trap_code: usize;
     trap_code = read_csr!(CSR_SCAUSE);
-    trace!("CSR_SCAUSE: {:#x}", trap_code);
+    info!("CSR_SCAUSE: {:#x}", trap_code);
     match trap_code & 0xfff {
         InterruptType::STI => {
             vmexitinfo::increment_timer_interrupt_global();
@@ -235,18 +304,19 @@ pub fn handle_eirq(current_cpu: &mut ArchCpu) {
     // TODO: handle other irq
     // check external interrupt && handle
     // sifive plic: context0=>cpu0,M mode,context1=>cpu0,S mode...
-    let context_id = 2 * current_cpu.cpuid + 1;
-    let host_plic = host_plic();
-    let claim_and_complete_addr =
-        host_plic.read().base + PLIC_GLOBAL_SIZE + 0x1000 * context_id + 0x4;
-    let irq = unsafe { core::ptr::read_volatile(claim_and_complete_addr as *const u32) };
-    debug!(
-        "CPU{} get external irq{}@{:#x}",
-        current_cpu.cpuid, irq, claim_and_complete_addr
-    );
-    host_plic.write().claim_complete[context_id] = irq;
-    // set external interrupt pending, which trigger guest interrupt
-    unsafe { hvip::set_vseip() };
+    // let context_id = 2 * current_cpu.cpuid + 1;
+    // let host_plic = host_plic();
+    // let claim_and_complete_addr =
+    //     host_plic.read().base + PLIC_GLOBAL_SIZE + 0x1000 * context_id + 0x4;
+    // let irq = unsafe { core::ptr::read_volatile(claim_and_complete_addr as *const u32) };
+    // debug!(
+    //     "CPU{} get external irq{}@{:#x}",
+    //     current_cpu.cpuid, irq, claim_and_complete_addr
+    // );
+    // host_plic.write().claim_complete[context_id] = irq;
+    // // set external interrupt pending, which trigger guest interrupt
+    // unsafe { hvip::set_vseip() };
+    panic!("unhandled external interrupt");
 }
 
 pub fn handle_ssi(current_cpu: &mut ArchCpu) {

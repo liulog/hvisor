@@ -1,4 +1,4 @@
-QEMU := ~/hypervisor/xiangshan/qemu-devel/build/qemu-system-riscv64
+QEMU := qemu-system-riscv64
 
 # FSIMG1 := $(image_dir)/virtdisk/rootfs1.ext4
 # FSIMG2 := $(image_dir)/virtdisk/rootfs-busybox.qcow2

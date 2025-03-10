@@ -4,6 +4,11 @@ use crate::consts::PER_CPU_SIZE;
 #[no_mangle]
 #[link_section = ".text.entry"]
 pub unsafe extern "C" fn arch_entry() -> i32 {
+
+    // other debug:
+    // li t0, 0x81000000                // 直接使用 li 指令构造 32 位地址
+    // jr t0                            // 跳转到 0x81000000
+    
     //a0=cpuid,a1=dtb addr
     core::arch::asm!(
         "

@@ -1,18 +1,18 @@
 use crate::{arch::zone::HvArchZoneConfig, config::*};
 
 // PLIC
-pub const PLIC_BASE: usize = 0x3c000000;
-pub const PLIC_MAX_IRQ: usize = 96;
-pub const PLIC_GLOBAL_SIZE: usize = 0x200000;
-pub const PLIC_TOTAL_SIZE: usize = 0x400000;
-pub const PLIC_MAX_CONTEXT: usize = 64;
-pub const PLIC_PRIORITY_BASE: usize = 0x0000;
-pub const PLIC_PENDING_BASE: usize = 0x1000;
-pub const PLIC_ENABLE_BASE: usize = 0x2000;
+// pub const PLIC_BASE: usize = 0x3c000000;
+// pub const PLIC_MAX_IRQ: usize = 96;
+// pub const PLIC_GLOBAL_SIZE: usize = 0x200000;
+// pub const PLIC_TOTAL_SIZE: usize = 0x400000;
+// pub const PLIC_MAX_CONTEXT: usize = 64;
+// pub const PLIC_PRIORITY_BASE: usize = 0x0000;
+// pub const PLIC_PENDING_BASE: usize = 0x1000;
+// pub const PLIC_ENABLE_BASE: usize = 0x2000;
 
 // ROOT ZONE 相关的约定 (这里是 virtual addr)
-pub const ROOT_ZONE_DTB_ADDR: u64 = 0x80E00000;
-pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x81000000;
+pub const ROOT_ZONE_DTB_ADDR: u64 = 0x80E00000;     /* physical addr */
+pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x81000000;  /* virtual addr */
 pub const ROOT_ZONE_ENTRY: u64 = 0x81000000;
 pub const ROOT_ZONE_CPUS: u64 = 1 << 0;
 
@@ -22,8 +22,8 @@ pub const ROOT_ZONE_NAME: &str = "root-linux";
 // root linux's dtb
 #[link_section = ".dtb1"]
 #[used]
-pub static GUEST1_DTB: [u8; include_bytes!("/home/jingyu/hypervisor/hvisor-1core/images/riscv64/devicetree/kmh_v2_1core.dtb").len()] =
-    *include_bytes!("/home/jingyu/hypervisor/hvisor-1core/images/riscv64/devicetree/kmh_v2_1core.dtb");
+pub static GUEST1_DTB: [u8; include_bytes!("/home/jingyu/hypervisor/hvisor-1core/new.dtb").len()] =
+    *include_bytes!("/home/jingyu/hypervisor/hvisor-1core/new.dtb");
 
 // root linux's image
 // #[link_section = ".img1"]
@@ -31,10 +31,18 @@ pub static GUEST1_DTB: [u8; include_bytes!("/home/jingyu/hypervisor/hvisor-1core
 // pub static GUEST1: [u8; include_bytes!("/home/jingyu/hypervisor/linuxloader/linux.bin").len()] =
 //     *include_bytes!("/home/jingyu/hypervisor/linuxloader/linux.bin");
 
+// /home/jingyu/riscv-linux-devel/arch/riscv/boot/Image
+
 #[link_section = ".img1"]
 #[used]
-pub static GUEST1: [u8; include_bytes!("/home/jingyu/hypervisor/xiangshan/riscv-linux-devel/arch/riscv/boot/Image").len()] =
-    *include_bytes!("/home/jingyu/hypervisor/xiangshan/riscv-linux-devel/arch/riscv/boot/Image");
+pub static GUEST1: [u8; include_bytes!("/home/jingyu/riscv-linux-devel/arch/riscv/boot/Image").len()] =
+    *include_bytes!("/home/jingyu/riscv-linux-devel/arch/riscv/boot/Image");
+
+
+// #[link_section = ".initrd"]
+// #[used]
+// pub static GUEST1_INITRD: [u8; include_bytes!("/mnt/d/cpio/astar_biglakes_rootfs.cpio").len()] =
+//     *include_bytes!("/mnt/d/cpio/astar_biglakes_rootfs.cpio");
 
 // #[link_section = ".img1"]
 // #[used]
@@ -56,7 +64,7 @@ pub static GUEST1: [u8; include_bytes!("/home/jingyu/hypervisor/xiangshan/riscv-
 
 
 // ROOT ZONE 的内存配置
-pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 2] = [
+pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 3] = [
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_RAM,
         physical_start: 0x80E00000,     // 物理位置
@@ -69,9 +77,15 @@ pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 2] = [
         virtual_start: 0x310B0000,
         size: 0x10000,
     }, // serial
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x3b001000,     // VS file
+        virtual_start: 0x3b000000,      // virt S file
+        size: 0x1000,
+    }, // imsic VS file
 ];
 
-pub const ROOT_ZONE_IRQS: [u32; 1] = [40];
+pub const ROOT_ZONE_IRQS: [u32; 1] = [10];
 
 // ROOT ZONE 的关于 PLIC 的配置
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {

@@ -1,0 +1,576 @@
+/dts-v1/;
+
+/ {
+	compatible = "bosc,kmh-v2-dev";
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+	model = "bosc,kmh-v2-1core";
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <0xf4240>;
+
+		cpu@0 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x00>;
+			riscv,isa = "rv64imafdc_sstc_sscofpmf_smaia_ssaia";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0sstc\0sscofpmf\0smaia\0ssaia";
+			status = "okay";
+			next-level-cache = <0x01>;
+			tlb-split;
+			phandle = <0x17>;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x02>;
+			};
+		};
+
+		cpu@1 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x01>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x03>;
+			};
+		};
+
+		cpu@2 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x02>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x04>;
+			};
+		};
+
+		cpu@3 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x03>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x05>;
+			};
+		};
+
+		cpu@4 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x04>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x06>;
+			};
+		};
+
+		cpu@5 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x05>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x07>;
+			};
+		};
+
+		cpu@6 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x06>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x08>;
+			};
+		};
+
+		cpu@7 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x07>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x09>;
+			};
+		};
+
+		cpu@8 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x08>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0a>;
+			};
+		};
+
+		cpu@9 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x09>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0b>;
+			};
+		};
+
+		cpu@10 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0a>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0c>;
+			};
+		};
+
+		cpu@11 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0b>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0d>;
+			};
+		};
+
+		cpu@12 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0c>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0e>;
+			};
+		};
+
+		cpu@13 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0d>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x0f>;
+			};
+		};
+
+		cpu@14 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0e>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x10>;
+			};
+		};
+
+		cpu@15 {
+			compatible = "bosc,kmh-v2\0riscv";
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x100>;
+			d-cache-size = <0x10000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x30>;
+			device_type = "cpu";
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x100>;
+			i-cache-size = <0x10000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x30>;
+			mmu-type = "riscv,sv48";
+			reg = <0x0f>;
+			riscv,isa = "rv64imafdcvh";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sdtrig\0sha\0shcounterenw\0shgatpa\0shlcofideleg\0shtvala\0shvsatpa\0shvstvala\0shvstvecd\0smaia\0smcsrind\0smdbltrp\0smmpm\0smnpm\0smrnmi\0smstateen\0ss1p13\0ssaia\0ssccptr\0sscofpmf\0sscounterenw\0sscsrind\0ssdbltrp\0ssnpm\0sspm\0ssstateen\0ssstrict\0sstc\0sstvala\0sstvecd\0ssu64xl\0supm\0sv39\0sv48\0svade\0svbare\0svinval\0svnapot\0svpbmt\0za64rs\0zacas\0zawrs\0zba\0zbb\0zbc\0zbkb\0zbkc\0zbkx\0zbs\0zcb\0zcmop\0zfa\0zfh\0zfhmin\0zic64b\0zicbom\0zicbop\0zicboz\0ziccamoa\0ziccif\0zicclsm\0ziccrse\0zicntr\0zicond\0zicsr\0zifencei\0zihintntl\0zihintpause\0zihpm\0zimop\0zkn\0zknd\0zkne\0zknh\0zksed\0zksh\0zkt\0zvbb\0zvfh\0zvfhmin\0zvkt\0zvl128b\0zvl32b\0zvl64b";
+			status = "disabled";
+			next-level-cache = <0x01>;
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				phandle = <0x11>;
+			};
+		};
+
+		l2-cache {
+			compatible = "cache";
+			cache-block-size = <0x40>;
+			cache-level = <0x02>;
+			cache-size = <0x100000>;
+			cache-unified;
+			phandle = <0x01>;
+		};
+	};
+
+	soc {
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		compatible = "bosc,kmh-v2-soc\0simple-bus";
+		ranges;
+
+		imsics@3b000000 {
+			riscv,num-ids = <0xff>;
+			reg = <0x00 0x3b000000 0x00 0x80000>;
+			interrupts-extended = <0x02 0x09 0x03 0x09 0x04 0x09 0x05 0x09 0x06 0x09 0x07 0x09 0x08 0x09 0x09 0x09 0x0a 0x09 0x0b 0x09 0x0c 0x09 0x0d 0x09 0x0e 0x09 0x0f 0x09 0x10 0x09 0x11 0x09>;
+			msi-controller;
+			interrupt-controller;
+			#interrupt-cells = <0x00>;
+			compatible = "riscv,imsics";
+			riscv,guest-index-bits = <0x03>;
+			phandle = <0x12>;
+		};
+
+		imsic_test@0 {
+			compatible = "imsic,test";
+			msi-parent = <0x12>;
+		};
+
+		aplic@31120000 {
+			riscv,num-sources = <0x60>;
+			reg = <0x00 0x31120000 0x00 0x8000>;
+			msi-parent = <0x12>;
+			interrupt-controller;
+			#interrupt-cells = <0x02>;
+			compatible = "riscv,aplic";
+			phandle = <0x13>;
+		};
+
+		serial@310b0000 {
+			compatible = "ns16550a";
+			reg = <0x00 0x310b0000 0x00 0x10000>;
+			reg-shift = <0x02>;
+			reg-io-width = <0x04>;
+			interrupt-parent = <0x13>;
+			interrupts = <0x0a 0x04>;
+			clock-frequency = <0x2faf080>;
+			current-speed = <0x1c200>;
+			status = "okay";
+		};
+
+		misc_clk_0 {
+			#clock-cells = <0x00>;
+			clock-frequency = <0x989680>;
+			compatible = "fixed-clock";
+			phandle = <0x15>;
+		};
+	};
+
+	memory@80E00000 {
+		device_type = "memory";
+		reg = <0x00 0x80E00000 0x00 0x7F200000>;
+	};
+
+	aliases {
+		serial0 = "/soc/serial@310b0000";
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon loglevel=8 drm.debug=0x2 amdgpu.cik=1 amdgpu.si=1 amdgpu.dpm=0 pcie_aspm=off pcie_port_pm=off amdgpu.vm_update_mode=3 root=/dev/sda1 rw ";
+		stdout-path = "serial0:115200n8";
+
+		opensbi-config {
+			compatible = "opensbi,config";
+			cold-boot-harts = <0x17>;
+		};
+	};
+};

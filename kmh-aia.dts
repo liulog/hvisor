@@ -1,0 +1,289 @@
+/dts-v1/;
+
+/ {
+	compatible = "bosc,kmh-v2-dev";
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+	model = "bosc,kmh-v2-1core";
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <0xf4240>;
+
+		cpu@0 {
+			compatible = "bosc,kmh-v2\0riscv";
+			device_type = "cpu";
+			riscv,isa = "rv64imafdcvh_sstc_sscofpmf_smaia_ssaia";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sstc\0sscofpmf\0smaia\0ssaia";
+			reg = <0x00>;
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x40>;
+			d-cache-size = <0x4000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x20>;
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x40>;
+			i-cache-size = <0x4000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x20>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <0x01>;
+			status = "okay";
+			phandle = <0x0b>;
+
+			interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <0x01>;
+				phandle = <0x02>;
+			};
+		};
+
+		cpu@1 {
+			compatible = "bosc,kmh-v2\0riscv";
+			device_type = "cpu";
+			riscv,isa = "rv64imafdcvh_sstc_sscofpmf_smaia_ssaia";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sstc\0sscofpmf\0smaia\0ssaia";
+			reg = <0x01>;
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x40>;
+			d-cache-size = <0x4000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x20>;
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x40>;
+			i-cache-size = <0x4000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x20>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <0x01>;
+			status = "disabled";
+
+			interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <0x01>;
+				phandle = <0x03>;
+			};
+		};
+
+		cpu@2 {
+			compatible = "bosc,kmh-v2\0riscv";
+			device_type = "cpu";
+			riscv,isa = "rv64imafdcvh_sstc_sscofpmf_smaia_ssaia";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sstc\0sscofpmf\0smaia\0ssaia";
+			reg = <0x02>;
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x40>;
+			d-cache-size = <0x4000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x20>;
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x40>;
+			i-cache-size = <0x4000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x20>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <0x01>;
+			status = "disabled";
+
+			interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <0x01>;
+				phandle = <0x04>;
+			};
+		};
+
+		cpu@3 {
+			compatible = "bosc,kmh-v2\0riscv";
+			device_type = "cpu";
+			riscv,isa = "rv64imafdcvh_sstc_sscofpmf_smaia_ssaia";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i\0m\0a\0f\0d\0c\0v\0h\0sstc\0sscofpmf\0smaia\0ssaia";
+			reg = <0x03>;
+			d-cache-block-size = <0x40>;
+			d-cache-sets = <0x40>;
+			d-cache-size = <0x4000>;
+			d-tlb-sets = <0x01>;
+			d-tlb-size = <0x20>;
+			i-cache-block-size = <0x40>;
+			i-cache-sets = <0x40>;
+			i-cache-size = <0x4000>;
+			i-tlb-sets = <0x01>;
+			i-tlb-size = <0x20>;
+			mmu-type = "riscv,sv39";
+			next-level-cache = <0x01>;
+			status = "disabled";
+
+			interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <0x01>;
+				phandle = <0x05>;
+			};
+		};
+
+		l2-cache {
+			compatible = "cache";
+			cache-block-size = <0x40>;
+			cache-level = <0x02>;
+			cache-size = <0x100000>;
+			cache-unified;
+			phandle = <0x01>;
+		};
+	};
+
+	soc {
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		compatible = "bosc,kmh-v2-soc\0simple-bus";
+		ranges;
+
+		timer@38000000 {
+			compatible = "riscv,clint0";
+			reg = <0x00 0x38000000 0x00 0x10000>;
+			interrupts-extended = <0x02 0x03 0x02 0x07 0x03 0x03 0x03 0x07 0x04 0x03 0x04 0x07 0x05 0x03 0x05 0x07>;
+		};
+
+		imsics@3a800000 {
+			riscv,num-ids = <0xff>;
+			reg = <0x00 0x3a800000 0x00 0x4000>;
+			interrupts-extended = <0x02 0x0b 0x03 0x0b 0x04 0x0b 0x05 0x0b>;
+			msi-controller;
+			interrupt-controller;
+			#interrupt-cells = <0x00>;
+			compatible = "riscv,imsics";
+			phandle = <0x08>;
+		};
+
+		imsics@3b000000 {
+			riscv,num-ids = <0xff>;
+			reg = <0x00 0x3b000000 0x00 0x4000>;
+			interrupts-extended = <0x02 0x09 0x03 0x09 0x04 0x09 0x05 0x09>;
+			msi-controller;
+			interrupt-controller;
+			#interrupt-cells = <0x00>;
+			compatible = "riscv,imsics";
+			phandle = <0x06>;
+		};
+
+		imsic_test@0 {
+			compatible = "imsic,test";
+			msi-parent = <0x06>;
+		};
+
+		aplic@31120000 {
+			riscv,num-sources = <0x60>;
+			reg = <0x00 0x31120000 0x00 0x8000>;
+			msi-parent = <0x06>;
+			interrupt-controller;
+			#interrupt-cells = <0x02>;
+			compatible = "riscv,aplic";
+			phandle = <0x07>;
+		};
+
+		aplic@31100000 {
+			riscv,delegate = <0x07 0x01 0x60>;
+			riscv,children = <0x07>;
+			riscv,num-sources = <0x60>;
+			reg = <0x00 0x31100000 0x00 0x8000>;
+			msi-parent = <0x08>;
+			interrupt-controller;
+			#interrupt-cells = <0x02>;
+			compatible = "riscv,aplic";
+		};
+
+		serial@310b0000 {
+			compatible = "ns16550a";
+			reg = <0x00 0x310b0000 0x00 0x10000>;
+			reg-shift = <0x02>;
+			reg-io-width = <0x04>;
+			clock-frequency = <0x2faf080>;
+			current-speed = <0x1c200>;
+			status = "okay";
+		};
+
+		serial@40600000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			current-speed = <0x1c200>;
+			reg = <0x00 0x40600000 0x00 0x1000>;
+			reg-names = "control";
+			interrupt-parent = <0x07>;
+			interrupts = <0x3b>;
+			status = "disable";
+		};
+
+		misc_clk_0 {
+			#clock-cells = <0x00>;
+			clock-frequency = <0x989680>;
+			compatible = "fixed-clock";
+			phandle = <0x09>;
+		};
+
+		pcie@32000000 {
+			#address-cells = <0x03>;
+			#interrupt-cells = <0x01>;
+			#size-cells = <0x02>;
+			clock-names = "sys_clk\0sys_clk_gt";
+			clocks = <0x09 0x09>;
+			compatible = "xlnx,xdma-host-3.00";
+			device_type = "pci";
+			interrupt-map = <0x00 0x00 0x00 0x01 0x0a 0x01 0x00 0x00 0x00 0x02 0x0a 0x02 0x00 0x00 0x00 0x03 0x0a 0x03 0x00 0x00 0x00 0x04 0x0a 0x04>;
+			interrupt-map-mask = <0x00 0x00 0x00 0x07>;
+			interrupt-names = "misc\0msi0\0msi1";
+			interrupt-parent = <0x07>;
+			interrupts = <0x0e 0x01 0x0d 0x01 0x0c 0x01>;
+			bus-range = <0x00 0xff>;
+			ranges = <0x2000000 0x00 0x40000000 0x00 0x60000000 0x00 0x20000000>;
+			reg = <0x00 0x33000000 0x00 0x1000000>;
+			status = "disable";
+
+			interrupt-controller {
+				#address-cells = <0x00>;
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				phandle = <0x0a>;
+			};
+		};
+
+		pci@32000000 {
+			#size-cells = <0x02>;
+			#interrupt-cells = <0x01>;
+			#address-cells = <0x03>;
+			interrupt-map-mask = <0x1800 0x00 0x00 0x07>;
+			interrupt-map = <0x00 0x00 0x00 0x01 0x07 0x20 0x04 0x00 0x00 0x00 0x02 0x07 0x21 0x04 0x00 0x00 0x00 0x03 0x07 0x22 0x04 0x00 0x00 0x00 0x04 0x07 0x23 0x04 0x800 0x00 0x00 0x01 0x07 0x21 0x04 0x800 0x00 0x00 0x02 0x07 0x22 0x04 0x800 0x00 0x00 0x03 0x07 0x23 0x04 0x800 0x00 0x00 0x04 0x07 0x20 0x04 0x1000 0x00 0x00 0x01 0x07 0x22 0x04 0x1000 0x00 0x00 0x02 0x07 0x23 0x04 0x1000 0x00 0x00 0x03 0x07 0x20 0x04 0x1000 0x00 0x00 0x04 0x07 0x21 0x04 0x1800 0x00 0x00 0x01 0x07 0x23 0x04 0x1800 0x00 0x00 0x02 0x07 0x20 0x04 0x1800 0x00 0x00 0x03 0x07 0x21 0x04 0x1800 0x00 0x00 0x04 0x07 0x22 0x04>;
+			msi-parent = <0x06>;
+			ranges = <0x1000000 0x00 0x00 0x00 0x3000000 0x00 0x10000 0x2000000 0x00 0x60000000 0x00 0x60000000 0x00 0x20000000>;
+			reg = <0x00 0x32000000 0x00 0x1000000>;
+			dma-coherent;
+			bus-range = <0x00 0xff>;
+			linux,pci-domain = <0x00>;
+			device_type = "pci";
+			compatible = "pci-host-ecam-generic";
+			status = "disable";
+		};
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x00 0x80000000 0x00 0x80000000>;
+	};
+
+	aliases {
+		serial0 = "/soc/serial@310b0000";
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon loglevel=8 drm.debug=0x2 amdgpu.cik=1 amdgpu.si=1 amdgpu.dpm=0 pcie_aspm=off pcie_port_pm=off amdgpu.vm_update_mode=3 root=/dev/sda1 rw";
+		stdout-path = "serial0:115200n8";
+		opensbi-config {
+			compatible = "opensbi,config";
+			cold-boot-harts = <0x0b>;
+		};
+	};
+};

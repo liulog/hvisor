@@ -55,9 +55,14 @@ SECTIONS
     .dtb1 : {
         KEEP(*(.dtb1))
     }
-
     . = 0x81000000;     /* linux 本身也会空出前面的 2MB 空间 */
     .img1 : {
         KEEP(*(.img1))
     }
+
+    /* linux 本身也会空出前面的 2MB 空间 */
+    /* . = 0x83000000;     
+    .initrd : {
+        KEEP(*(.initrd))
+    }  */
 }

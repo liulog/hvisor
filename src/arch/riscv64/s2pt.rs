@@ -1,7 +1,7 @@
 #![allow(unused)]
 use super::{
     csr::{write_csr, read_csr,  CSR_HGATP},
-    paging::{GenericPTE, Level3PageTable, PagingInstr},
+    paging::{GenericPTE, Level4PageTable, PagingInstr},
 };
 use bit_field::BitField;
 use core::fmt;
@@ -57,10 +57,12 @@ impl From<DescriptorAttr> for MemFlags {
     }
 }
 
+
 impl From<MemFlags> for DescriptorAttr {
     fn from(flags: MemFlags) -> Self {
         let mut attr = Self::empty();
-        attr |= Self::VALID | Self::USER | Self::ACCESSED | Self::DIRTY;       // stage 2 page table must user
+        attr |= Self::VALID | Self::USER | Self::ACCESSED | Self::DIRTY | Self::READABLE | Self::WRITABLE;       // stage 2 page table must user
+
         if flags.contains(MemFlags::READ) {
             attr |= Self::READABLE;
         }
@@ -121,6 +123,7 @@ impl GenericPTE for PageTableEntry {
         // 设置 PTE 中的 flags
         let mut attr: DescriptorAttr = flags.into();
         attr |= DescriptorAttr::VALID;
+        // info!("set flags: {:#x?}", attr);
         self.0 = (attr.bits() & !PTE_PPN_MASK as u64) | (self.0 as u64 & PTE_PPN_MASK as u64);
     }
 
@@ -166,18 +169,23 @@ impl PagingInstr for S2PTInstr {
         info!("guest stage2 PT activate");
         unsafe {
             let mut bits: usize = 0;
-            let mode: usize = 8;    // Mode::Sv39x4
-                                    // 设置为 0/9/10 都没有问题，设置为 8 会出现问题, 疑惑, 为什么开了 Sv48x4 或者 Sv57x4, 则能够执行一点呢？ 有问题啊
+            let mode: usize = 9;    // Mode::Sv39x4
             let vmid: usize = 0;
             bits.set_bits(60..64, mode as usize);
             bits.set_bits(44..58, vmid);
             // 设置 root_paddr
             bits.set_bits(0..44, root_paddr >> 12);
-            info!("HGATP: {:#x?}", bits);
             write_csr!(CSR_HGATP, bits);
+            // write_csr!(CSR_HGATP, 0);
+            // 增加 TLB 刷新指令，刷新所有 guest TLB 条目
+            // info!("flush TLB: hfence.gvma, hfence.vvma");
             let hgatp: usize = read_csr!(CSR_HGATP);
             info!("HGATP after activation: {:#x?}", hgatp);
-            // core::arch::asm!("hfence.gvma");                            //not supported in rust
+
+            core::arch::asm!("hfence.gvma", options(nomem, nostack));
+            core::arch::asm!("hfence.vvma", options(nomem, nostack));
+
+        //     // core::arch::asm!("hfence.gvma");                            //not supported in rust
         }
     }
 
@@ -186,4 +194,5 @@ impl PagingInstr for S2PTInstr {
     }
 }
 
-pub type Stage2PageTable = Level3PageTable<HostPhysAddr, PageTableEntry, S2PTInstr>;
+// pub type Stage2PageTable = Level3PageTable<HostPhysAddr, PageTableEntry, S2PTInstr>;
+pub type Stage2PageTable = Level4PageTable<HostPhysAddr, PageTableEntry, S2PTInstr>;

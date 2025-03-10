@@ -49,8 +49,7 @@ endif
 .PHONY: all elf disa run gdb monitor clean tools rootfs build
 all: $(hvisor_bin)
 
-build: $(hvisor_bin)
-	make -C ~/hypervisor/xiangshan/opensbi-devel CROSS_COMPILE=riscv64-unknown-linux-gnu- ARCH=riscv PLATFORM=generic FW_PAYLOAD_PATH=/home/jingyu/hypervisor/hvisor-1core/target/riscv64gc-unknown-none-elf/debug/hvisor.bin
+# build: $(hvisor_bin)
 
 elf:
 	cargo build $(build_args)

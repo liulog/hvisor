@@ -3,19 +3,26 @@ export CROSS_COMPILE=riscv64-unknown-linux-gnu-
 # hvisor
 make all LOG=info ARCH=riscv64 FEATURES=kmh_v2_1core
 
-cd ~/hypervisor/opensbi-1.5.1
-# ./bo  make clean
-# make -j8 ARCH=riscv PLATFORM=generic FW_PAYLOAD_PATH=/home/jingyu/hypervisor/xiangshan/riscv-linux-devel/arch/riscv/boot/Image FW_FDT_PATH=/home/jingyu/hypervisor/xiangshan/opensbi-devel/kmh-v2-1core.dtb
+cd ~/opensbi-devel
+# make clean
+# make -j8 ARCH=riscv PLATFORM=generic \
+#     FW_PAYLOAD_PATH=/home/jingyu/hypervisor/hvisor-1core/target/riscv64gc-unknown-none-elf/debug/hvisor.bin \
+#     FW_FDT_PATH=/home/jingyu/hypervisor/easyloader/kmh-aia.dtb\
+#     FW_PAYLOAD_FDT_ADDR=0xBFE00000
 
-make clean
-make -j8 ARCH=riscv PLATFORM=generic FW_PAYLOAD_PATH=/home/jingyu/hypervisor/hvisor-1core/target/riscv64gc-unknown-none-elf/debug/hvisor.bin FW_FDT_PATH=/home/jingyu/hypervisor/xiangshan/opensbi-devel/kmh-v2-1core.dtb FW_PAYLOAD_FDT_ADDR=0xBFE00000
-# make distclean
-# make -j8 ARCH=riscv PLATFORM=generic FW_PAYLOAD_PATH=/home/jingyu/hypervisor/xiangshan/riscv-linux-devel/arch/riscv/boot/Image FW_FDT_PATH=/home/jingyu/hypervisor/xiangshan/opensbi-devel/kmh-v2-1core.dtb FW_PAYLOAD_FDT_ADDR=0xBFE00000
+make -j8 ARCH=riscv PLATFORM=generic \
+    FW_PAYLOAD_PATH=/home/jingyu/hypervisor/hvisor-1core/target/riscv64gc-unknown-none-elf/debug/hvisor.bin \
+    FW_FDT_PATH=/home/jingyu/riscv-linux-devel/arch/riscv/boot/dts/bosc/kmh-v2-1core.dtb \
+    FW_PAYLOAD_FDT_ADDR=0xBFE00000
 
-/home/jingyu/hypervisor/xiangshan/qemu-devel/build/qemu-system-riscv64 -nographic \
-    -M bosc-kmh -smp 1 -m 2G \
-    -bios ~/hypervisor/opensbi-1.5.1/build/platform/generic/firmware/fw_payload.bin                         # -d mmu,int -D qemu.log
+# make -j8 ARCH=riscv PLATFORM=generic \
+#     FW_PAYLOAD_PATH=/home/jingyu/hypervisor/xvisor-sv39x4.bin \
+#     FW_FDT_PATH=/home/jingyu/hypervisor/easyloader/kmh-aia.dtb\
+#     FW_PAYLOAD_FDT_ADDR=0xBFE00000
 
+qemu-system-riscv64 -nographic  -M bosc-kmh \
+    -m 2G -smp 1 \
+    -bios ~/opensbi-devel/build/platform/generic/firmware/fw_payload.bin -s -S
 
 # cd ~/hypervisor/opensbi-1.5.1
 # # make distclean

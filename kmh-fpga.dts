@@ -1,0 +1,58 @@
+/dts-v1/;
+
+/ {
+	compatible = "bosc,kmh-v2-dev";
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+	model = "bosc,kmh-v2-1core";
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <0xf4240>;
+
+		cpu@0 {
+			compatible = "bosc,kmh-v2\0riscv";
+			device_type = "cpu";
+			riscv,isa = "rv64imafdc_sstc";
+			reg = <0x00>;
+			mmu-type = "riscv,sv48";
+			status = "okay";
+
+			intc_cpu0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <0x01>;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+		compatible = "bosc,kmh-v2-soc\0simple-bus";
+		ranges;
+
+		serial@310b0000 {
+			compatible = "ns16550a";
+			reg = <0x00 0x310b0000 0x00 0x10000>;
+			reg-shift = <0x02>;
+			reg-io-width = <0x04>;
+			clock-frequency = <0x2faf080>;
+		};
+	};
+
+	memory@80E00000 {
+		device_type = "memory";
+		reg = <0x00 0x80e00000 0x00 0x7F200000>;
+	};
+
+	aliases {
+		serial0 = "/soc/serial@310b0000";
+	};
+
+	chosen {
+		bootargs = "root=/dev/ram rw console=ttyS0,115200 earlycon=sbi";
+		stdout-path = "serial0:115200n8";
+	};
+};

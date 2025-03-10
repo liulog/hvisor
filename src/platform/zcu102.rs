@@ -12,8 +12,8 @@ pub const PLIC_ENABLE_BASE: usize = 0x2000;
 pub const ROOT_ZONE_DTB_ADDR: u64 = 0x80000000;
 pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x80200000;
 pub const ROOT_ZONE_ENTRY: u64 = 0x80200000;
-// pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
-pub const ROOT_ZONE_CPUS: u64 = 1 << 0;
+pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+// pub const ROOT_ZONE_CPUS: u64 = 1 << 0;
 
 pub const ROOT_ZONE_NAME: &str = "root-linux";
 
@@ -40,7 +40,7 @@ pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 2] = [
         mem_type: MEM_TYPE_RAM,
         physical_start: 0x80E00000,
         virtual_start: 0x80000000, // virtual_start: 0x80E00000,
-        size: 0x1f200000,   // zcu 只有 512 MB
+        size: 0x0f200000,   // zcu 只有 512 MB
     }, // ram
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
