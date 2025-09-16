@@ -24,6 +24,8 @@ pub const ACLINT_SSWI_BASE: usize = 0x2F00000;
 
 pub const PLIC_BASE: usize = 0xc000000;
 
+pub const IOMMU_SYS_BASE: usize = 0x3010000;
+
 pub const BOARD_PLIC_INTERRUPTS_NUM: usize = 1023; // except irq 0
 
 // This device is used for qemu-quit.
@@ -36,7 +38,7 @@ pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1);
 
 pub const ROOT_ZONE_NAME: &str = "root-linux";
 
-pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 9] = [
+pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_RAM,
         physical_start: 0x83000000,
@@ -54,7 +56,19 @@ pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 9] = [
         physical_start: 0x30000000,
         virtual_start: 0x30000000,
         size: 0x10000000,
-    }, // pci
+    }, // pci-ecam
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x4000_0000,
+        virtual_start: 0x4000_0000,
+        size: 0x4000_0000,
+    }, // pci-mmio
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x4_0000_0000,
+        virtual_start: 0x4_0000_0000,
+        size: 0x4_0000_0000,
+    }, // pci-high
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0x10001000,
@@ -95,10 +109,27 @@ pub const ROOT_ZONE_MEMORY_REGIONS: [HvConfigMemoryRegion; 9] = [
 
 // Note: all here's irqs are hardware irqs,
 //  only these irq can be transferred to the physical PLIC.
-pub const HW_IRQS: [u32; 11] = [1, 2, 3, 4, 5, 8, 10, 33, 34, 35, 36];
+pub const HW_IRQS: &[u32] = &[
+    1, 2, 3, 4, 5, 8,   // virtio-mmio
+    0xA, // uart0
+    0x20, 0x21, 0x22, 0x23, // pci/pcie
+    0x24, 0x24, 0x25, 0x27, // iommu
+];
 
 // irqs belong to the root zone.
-pub const ROOT_ZONE_IRQS: [u32; 11] = [1, 2, 3, 4, 5, 8, 10, 33, 34, 35, 36];
+pub const ROOT_ZONE_IRQS: &[u32] = &[
+    1, 2, 3, 4, 5, 8,   // virtio-mmio
+    0xA, // uart0
+    0x20, 0x21, 0x22, 0x23, // pci/pcie
+];
+
+// irqs belong to hvisor.
+pub const HV_IRQS: &[u32] = &[
+    0x24,   // command queue intr
+    0x25,   // fault queue intr
+    0x26,   // performance monitor intr
+    0x27,   // page-request queue intr
+];
 
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
     plic_base: 0xc000000,
