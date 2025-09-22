@@ -109,6 +109,7 @@ impl Zone {
             #[cfg(feature = "eic7700_sysreg")]
             self.virtual_syscon_mmio_init();
         }
+        self.viommu_mmio_init();
     }
 }
 

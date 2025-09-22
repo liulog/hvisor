@@ -38,6 +38,9 @@ use vcell::VolatileCell;
 use crate::platform::__board::*;
 use core::mem::size_of;
 use crate::zone::find_zone;
+use crate::zone::Zone;
+use crate::memory::MMIOAccess;
+use crate::error::HvResult;
 
 // pub const BLK_PCI_ID: usize = 0x4;
 // pub const PCIE_MMIO_BEG: usize = 0x4000_0000;
@@ -47,56 +50,57 @@ use crate::zone::find_zone;
 
 
 /// This driver's global configuration
-const IOMMU_MODE: usize = IommuMode::Bare as _;
+const IOMMU_MODE: usize = IommuMode::Ddt1Lvl as _;
 const IOMMU_CQ_PAGE_NUM: usize = 1;
 const IOMMU_FQ_PAGE_NUM: usize = 1;
 const IOMMU_PQ_PAGE_NUM: usize = 1;
 
 
 /// Capabilities register fields
-const RV_IOMMU_CAPS_VERSION_MASK: u64 = 0xFF << 0;
-const RV_IOMMU_CAPS_SV32_BIT: u64 = 0x1 << 8;
-const RV_IOMMU_CAPS_SV39_BIT: u64 = 0x1 << 9;
-const RV_IOMMU_CAPS_SV48_BIT: u64 = 0x1 << 10;
-const RV_IOMMU_CAPS_SV57_BIT: u64 = 0x1 << 11;
-const RV_IOMMU_CAPS_SVPBMT_BIT: u64 = 0x1 << 15;
-const RV_IOMMU_CAPS_SV32X4_BIT: u64 = 0x1 << 16;
-const RV_IOMMU_CAPS_SV39X4_BIT: u64 = 0x1 << 17;
-const RV_IOMMU_CAPS_SV48X4_BIT: u64 = 0x1 << 18;
-const RV_IOMMU_CAPS_SV57X4_BIT: u64 = 0x1 << 19;
-const RV_IOMMU_CAPS_AMO_MRIF_BIT: u64 = 0x1 << 21;
-const RV_IOMMU_CAPS_MSI_FLAT_BIT: u64 = 0x1 << 22;
-const RV_IOMMU_CAPS_MSI_MRIF_BIT: u64 = 0x1 << 23;
-const RV_IOMMU_CAPS_AMO_HWAD_BIT: u64 = 0x1 << 24;
-const RV_IOMMU_CAPS_ATS_BIT: u64 = 0x1 << 25;
-const RV_IOMMU_CAPS_T2GPA_BIT: u64 = 0x1 << 26;
-const RV_IOMMU_CAPS_END_BIT: u64 = 0x1 << 27;
-const RV_IOMMU_CAPS_IGS_MASK: u64 = 0x3 << 28;
-const RV_IOMMU_CAPS_HPM_BIT: u64 = 0x1 << 30;
-const RV_IOMMU_CAPS_DBG_BIT: u64 = 0x1 << 31;
-const RV_IOMMU_CAPS_PAS_MASK: u64 = 0x3F << 32;
-const RV_IOMMU_CAPS_PD8_BIT: u64 = 0x1 << 38;
-const RV_IOMMU_CAPS_PD17_BIT: u64 = 0x1 << 39;
-const RV_IOMMU_CAPS_PD20_BIT: u64 = 0x1 << 40;
+pub const RV_IOMMU_CAPS_VERSION_MASK: u64 = 0xFF << 0;
+pub const RV_IOMMU_CAPS_SV32_BIT: u64 = 0x1 << 8;
+pub const RV_IOMMU_CAPS_SV39_BIT: u64 = 0x1 << 9;
+pub const RV_IOMMU_CAPS_SV48_BIT: u64 = 0x1 << 10;
+pub const RV_IOMMU_CAPS_SV57_BIT: u64 = 0x1 << 11;
+pub const RV_IOMMU_CAPS_SVPBMT_BIT: u64 = 0x1 << 15;
+pub const RV_IOMMU_CAPS_SV32X4_BIT: u64 = 0x1 << 16;
+pub const RV_IOMMU_CAPS_SV39X4_BIT: u64 = 0x1 << 17;
+pub const RV_IOMMU_CAPS_SV48X4_BIT: u64 = 0x1 << 18;
+pub const RV_IOMMU_CAPS_SV57X4_BIT: u64 = 0x1 << 19;
+pub const RV_IOMMU_CAPS_AMO_MRIF_BIT: u64 = 0x1 << 21;
+pub const RV_IOMMU_CAPS_MSI_FLAT_BIT: u64 = 0x1 << 22;
+pub const RV_IOMMU_CAPS_MSI_MRIF_BIT: u64 = 0x1 << 23;
+pub const RV_IOMMU_CAPS_AMO_HWAD_BIT: u64 = 0x1 << 24;
+pub const RV_IOMMU_CAPS_ATS_BIT: u64 = 0x1 << 25;
+pub const RV_IOMMU_CAPS_T2GPA_BIT: u64 = 0x1 << 26;
+pub const RV_IOMMU_CAPS_END_BIT: u64 = 0x1 << 27;
+pub const RV_IOMMU_CAPS_IGS_MASK: u64 = 0x3 << 28;
+pub const RV_IOMMU_CAPS_HPM_BIT: u64 = 0x1 << 30;
+pub const RV_IOMMU_CAPS_DBG_BIT: u64 = 0x1 << 31;
+pub const RV_IOMMU_CAPS_PAS_MASK: u64 = 0x3F << 32;
+pub const RV_IOMMU_CAPS_PD8_BIT: u64 = 0x1 << 38;
+pub const RV_IOMMU_CAPS_PD17_BIT: u64 = 0x1 << 39;
+pub const RV_IOMMU_CAPS_PD20_BIT: u64 = 0x1 << 40;
 
-const RV_IOMMU_SUPPORTED_VERSION: u64 = 0x10;
-const RV_IOMMU_IGS_MSI: u64 = 0;
-const RV_IOMMU_IGS_WSI: u64 = 1;
-const RV_IOMMU_IGS_BOTH: u64 = 2;
+pub const RV_IOMMU_SUPPORTED_VERSION: u64 = 0x10;
+pub const RV_IOMMU_IGS_MSI: u64 = 0;
+pub const RV_IOMMU_IGS_WSI: u64 = 1;
+pub const RV_IOMMU_IGS_BOTH: u64 = 2;
 
 /// Features control register fields
-const RV_IOMMU_FCTL_DEFAULT: u32 = 0x1 << 1;
-const RV_IOMMU_FCTL_BE_BIT: u32 = 0x1 << 0;
-const RV_IOMMU_FCTL_WSI_BIT: u32 = 0x1 << 1;
-const RV_IOMMU_FCTL_GXL_BIT: u32 = 0x1 << 2;
+pub const RV_IOMMU_FCTL_DEFAULT: u32 = 0x1 << 1;
+pub const RV_IOMMU_FCTL_BE_BIT: u32 = 0x1 << 0;
+pub const RV_IOMMU_FCTL_WSI_BIT: u32 = 0x1 << 1;
+pub const RV_IOMMU_FCTL_GXL_BIT: u32 = 0x1 << 2;
 
 /// Device-directory-table pointer fields
-const RV_IOMMU_DDTP_MODE_MASK: usize = 0xF;
-const RV_IOMMU_DDTP_BUSY_BIT: usize = 0x1 << 4;
-const RV_IOMMU_DDTP_PPN_MASK: usize = 0xFFF_FFFF_FFFF << 10;    // [53:10] PPN
+pub const RV_IOMMU_DDTP_MODE_MASK: usize = 0xF;
+pub const RV_IOMMU_DDTP_BUSY_BIT: usize = 0x1 << 4;
+pub const RV_IOMMU_DDTP_PPN_MASK: usize = 0xFFF_FFFF_FFFF << 10;    // [53:10] PPN
 
 /// Iommu Mode
-enum IommuMode {
+#[derive(Debug, PartialEq, Eq)]
+pub enum IommuMode {
     Off = 0x0,      // No inbound memory transactions are allowed
     Bare = 0x1,     // No translation or protection
     Ddt1Lvl = 0x2,  // One-level device-directory-table
@@ -104,61 +108,120 @@ enum IommuMode {
     Ddt3Lvl = 0x4,  // Three-level device-directory-table
 }
 
-/// Icvec register fields
-const RV_IOMMU_ICVEC_CIV_MASK: u64 = 0xF;
-const RV_IOMMU_ICVEC_FIV_MASK: u64 = 0xF << 4;
-const RV_IOMMU_ICVEC_PMIV_MASK: u64 = 0xF << 8;
-const RV_IOMMU_ICVEC_PIV_MASK: u64 = 0xF << 12;
-const RV_IOMMU_ICVEC_MASK: u64 = RV_IOMMU_ICVEC_CIV_MASK | RV_IOMMU_ICVEC_FIV_MASK;
+impl TryFrom<usize> for IommuMode {
+    type Error = ();
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Off),
+            1 => Ok(Self::Bare),
+            2 => Ok(Self::Ddt1Lvl),
+            3 => Ok(Self::Ddt2Lvl),
+            4 => Ok(Self::Ddt3Lvl),
+            _ => Err(()),
+        }
+    }
+}
 
-/// Interrupt pending status register fields
-const RV_IOMMU_IPSR_CIP_BIT: u32 = 1;
-const RV_IOMMU_IPSR_FIP_BIT: u32 = 1 << 1;
-const RV_IOMMU_IPSR_PMIP_BIT: u32 = 1 << 2;
-const RV_IOMMU_IPSR_PIP_BIT: u32 = 1 << 3;
-const RV_IOMMU_IPSR_CLEAR: u32 = RV_IOMMU_IPSR_CIP_BIT | RV_IOMMU_IPSR_FIP_BIT | RV_IOMMU_IPSR_PMIP_BIT | RV_IOMMU_IPSR_PIP_BIT;
+/// DDT entry. fsc register fields
+pub const RV_IOMMU_FSC_MODE_MASK:u64 = 0xF << 60;
+pub const RV_IOMMU_FSC_PPN_MASK:u64 = 0xFFF_FFFF_FFFF;
 
-/// In-memory Queue common fields
-const RV_IOMMU_XQCSR_XQEN_BIT: u32 = 1 << 0;
-const RV_IOMMU_XQCSR_XIE_BIT: u32 = 1 << 1;
-const RV_IOMMU_FQCSR_XQMF_BIT: u32 = 1 << 8;
-const RV_IOMMU_XQCSR_XQON_BIT: u32 = 1 << 16;
-const RV_IOMMU_XQCSR_BUSY_BIT: u32 = 1 << 17;
-/// Command queue CSR fields
-const RV_IOMMU_CQCSR_CMD_TO_BIT: u32 = 1 << 9;
-const RV_IOMMU_CQCSR_CMD_ILL_BIT: u32 = 1 << 10;
-const RV_IOMMU_CQCSR_CMD_FENCE_WIP_BIT: u32 = 1 << 11;
-/// Fault queue CSR fields
-const RV_IOMMU_FQCSR_FQOF_BIT: u32 = 1 << 9;
-/// Page-request queue CSR fields
-const RV_IOMMU_PQCSR_PQOF_BIT: u32 = 1 << 9;
+#[derive(Debug, PartialEq, Eq)]
+pub enum IosatpMode {
+    Bare = 0x0,
+    Sv39 = 0x8,
+    Sv48 = 0x9,
+    Sv57 = 0xA,
+}
+
+impl TryFrom<usize> for IosatpMode {
+    type Error = ();
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match value {
+            0x0 => Ok(Self::Bare),
+            0x8 => Ok(Self::Sv39),
+            0x9 => Ok(Self::Sv48),
+            0xA => Ok(Self::Sv57),
+            _ => Err(()),
+        }
+    }
+}
+
+/// DDT entry. iohgatp register fields
+// pub const RV_IOMMU_IOHGATP_MODE_MASK: u64 = 0xF << 60;
+// pub const RV_IOMMU_IOHGATP_GSCID_MASK: u64 = 0xFFFF << 44;
+// pub const RV_IOMMU_IOHGATP_PPN_MASK: u64 = 0xFFF_FFFF_FFFF;
+
+// #[derive(Debug, PartialEq, Eq)]
+// pub enum IohgatpMode {
+//     Bare = 0x0,
+//     Sv39x4 = 0x8,
+//     Sv48x4 = 0x9,
+//     Sv57x4 = 0xA,
+// }
+
+// impl TryFrom<usize> for IohgatpMode {
+//     type Error = ();
+//     fn try_from(value: usize) -> Result<Self, Self::Error> {
+//         match value {
+//             0x0 => Ok(Self::Bare),
+//             0x8 => Ok(Self::Sv39x4),
+//             0x9 => Ok(Self::Sv48x4),
+//             0xA => Ok(Self::Sv57x4),
+//             _ => Err(()),
+//         }
+//     }
+// }
 
 /// Device-context fields
-const RV_IOMMU_DC_TC_VALID_BIT: u64 = 1;
-const RV_IOMMU_DC_TC_EN_ATS_BIT: u64 = 1 << 1;
-const RV_IOMMU_DC_TC_EN_PRI_BIT: u64 = 1 << 2;
-const RV_IOMMU_DC_TC_T2GPA_BIT: u64 = 1 << 3;
-const RV_IOMMU_DC_TC_DTF_BIT: u64 = 1 << 4;
-const RV_IOMMU_DC_TC_PDTV_BIT: u64 = 1 << 5;
-const RV_IOMMU_DC_TC_PRPR_BIT: u64 = 1 << 6;
-const RV_IOMMU_DC_TC_GADE_BIT: u64 = 1 << 7;
-const RV_IOMMU_DC_TC_SADE_BIT: u64 = 1 << 8;
-const RV_IOMMU_DC_TC_DPE_BIT: u64 = 1 << 9;
-const RV_IOMMU_DC_TC_SBE_BIT: u64 = 1 << 10;
-const RV_IOMMU_DC_TC_SXL_BIT: u64 = 1 << 11;
-const RV_IOMMU_DC_IOHGATP_MODE_MASK: u64 = 0xF << 60;
-const RV_IOMMU_DC_IOHGATP_GSCID_MASK: u64 = 0xFFFF << 44;
-const RV_IOMMU_DC_IOHGATP_PPN_MASK: u64 = 0xFFF_FFFF_FFFF;
+pub const RV_IOMMU_DC_TC_VALID_BIT: u64 = 1;
+pub const RV_IOMMU_DC_TC_EN_ATS_BIT: u64 = 1 << 1;
+pub const RV_IOMMU_DC_TC_EN_PRI_BIT: u64 = 1 << 2;
+pub const RV_IOMMU_DC_TC_T2GPA_BIT: u64 = 1 << 3;
+pub const RV_IOMMU_DC_TC_DTF_BIT: u64 = 1 << 4;
+pub const RV_IOMMU_DC_TC_PDTV_BIT: u64 = 1 << 5;
+pub const RV_IOMMU_DC_TC_PRPR_BIT: u64 = 1 << 6;
+pub const RV_IOMMU_DC_TC_GADE_BIT: u64 = 1 << 7;
+pub const RV_IOMMU_DC_TC_SADE_BIT: u64 = 1 << 8;
+pub const RV_IOMMU_DC_TC_DPE_BIT: u64 = 1 << 9;
+pub const RV_IOMMU_DC_TC_SBE_BIT: u64 = 1 << 10;
+pub const RV_IOMMU_DC_TC_SXL_BIT: u64 = 1 << 11;
+pub const RV_IOMMU_DC_IOHGATP_MODE_MASK: u64 = 0xF << 60;
+pub const RV_IOMMU_DC_IOHGATP_GSCID_MASK: u64 = 0xFFFF << 44;
+pub const RV_IOMMU_DC_IOHGATP_PPN_MASK: u64 = 0xFFF_FFFF_FFFF;
 
-enum IoghatpMode {
-    Bare = 0x0,
-    Sv39x4 = 0x8,
-    Sv48x4 = 0x9,
-    Sv57x4 = 0xA,
-}
+/// Icvec register fields
+pub const RV_IOMMU_ICVEC_CIV_MASK: u64 = 0xF;
+pub const RV_IOMMU_ICVEC_FIV_MASK: u64 = 0xF << 4;
+pub const RV_IOMMU_ICVEC_PMIV_MASK: u64 = 0xF << 8;
+pub const RV_IOMMU_ICVEC_PIV_MASK: u64 = 0xF << 12;
+pub const RV_IOMMU_ICVEC_MASK: u64 = RV_IOMMU_ICVEC_CIV_MASK | RV_IOMMU_ICVEC_FIV_MASK;
+
+/// Interrupt pending status register fields
+pub const RV_IOMMU_IPSR_CIP_BIT: u32 = 1;
+pub const RV_IOMMU_IPSR_FIP_BIT: u32 = 1 << 1;
+pub const RV_IOMMU_IPSR_PMIP_BIT: u32 = 1 << 2;
+pub const RV_IOMMU_IPSR_PIP_BIT: u32 = 1 << 3;
+pub const RV_IOMMU_IPSR_CLEAR: u32 = RV_IOMMU_IPSR_CIP_BIT | RV_IOMMU_IPSR_FIP_BIT | RV_IOMMU_IPSR_PMIP_BIT | RV_IOMMU_IPSR_PIP_BIT;
+
+/// In-memory Queue common fields
+pub const RV_IOMMU_XQCSR_XQEN_BIT: u32 = 1 << 0;
+pub const RV_IOMMU_XQCSR_XIE_BIT: u32 = 1 << 1;
+pub const RV_IOMMU_FQCSR_XQMF_BIT: u32 = 1 << 8;
+pub const RV_IOMMU_XQCSR_XQON_BIT: u32 = 1 << 16;
+pub const RV_IOMMU_XQCSR_BUSY_BIT: u32 = 1 << 17;
+/// Command queue CSR fields
+pub const RV_IOMMU_CQCSR_CMD_TO_BIT: u32 = 1 << 9;
+pub const RV_IOMMU_CQCSR_CMD_ILL_BIT: u32 = 1 << 10;
+pub const RV_IOMMU_CQCSR_CMD_FENCE_WIP_BIT: u32 = 1 << 11;
+/// Fault queue CSR fields
+pub const RV_IOMMU_FQCSR_FQOF_BIT: u32 = 1 << 9;
+/// Page-request queue CSR fields
+pub const RV_IOMMU_PQCSR_PQOF_BIT: u32 = 1 << 9;
+
 /// MSI configuration table structure
 #[repr(C)]
-struct MsiCfgTbl{
+pub struct MsiCfgTbl{
     msg_addr: VolatileCell<u64>,
     msg_data: VolatileCell<u32>,
     vector_ctl: VolatileCell<u32>,
@@ -166,47 +229,51 @@ struct MsiCfgTbl{
 
 /// IOMMU Memory-mapped Register Layout
 #[repr(C)]
-struct IommuRegMap {
-    caps: VolatileCell<u64>,                  // Capabilities Register
-    fctl: VolatileCell<u32>,                  // Features-control Register
+pub struct IommuRegMap {
+    pub caps: VolatileCell<u64>,                  // Capabilities Register
+    pub fctl: VolatileCell<u32>,                  // Features-control Register
     __custom1: [u8; 4],
-    ddtp: VolatileCell<u64>,                  // Device Directory Table Pointer
+    pub ddtp: VolatileCell<u64>,                  // Device Directory Table Pointer
     /// Command Queue
-    cqb: VolatileCell<u64>,                   // Command Queue Base
-    cqh: VolatileCell<u32>,                   // Command Queue Head
-    cqt: VolatileCell<u32>,                   // Command Queue Tail
+    pub cqb: VolatileCell<u64>,                   // Command Queue Base
+    pub cqh: VolatileCell<u32>,                   // Command Queue Head
+    pub cqt: VolatileCell<u32>,                   // Command Queue Tail
     /// Fault Queue
-    fqb: VolatileCell<u64>,                   // Fault Queue Base
-    fqh: VolatileCell<u32>,                   // Fault Queue Head
-    fqt: VolatileCell<u32>,                   // Fault Queue Tail
+    pub fqb: VolatileCell<u64>,                   // Fault Queue Base
+    pub fqh: VolatileCell<u32>,                   // Fault Queue Head
+    pub fqt: VolatileCell<u32>,                   // Fault Queue Tail
     /// Page-request Queue
-    pqb: VolatileCell<u64>,                   // Page-request Queue Base
-    pqh: VolatileCell<u32>,                   // Page-request Queue Head
-    pqt: VolatileCell<u32>,                   // Page-request Queue Tail
-    cqcsr: VolatileCell<u32>,                 // Command Queue CSR
-    fqcsr: VolatileCell<u32>,                 // Fault Queue CSR
-    pqcsr: VolatileCell<u32>,                 // Page-request Queue CSR
-    ipsr: VolatileCell<u32>,                  // Interrupt Pending and Status Register
+    pub pqb: VolatileCell<u64>,                   // Page-request Queue Base
+    pub pqh: VolatileCell<u32>,                   // Page-request Queue Head
+    pub pqt: VolatileCell<u32>,                   // Page-request Queue Tail
+    pub cqcsr: VolatileCell<u32>,                 // Command Queue CSR
+    pub fqcsr: VolatileCell<u32>,                 // Fault Queue CSR
+    pub pqcsr: VolatileCell<u32>,                 // Page-request Queue CSR
+    pub ipsr: VolatileCell<u32>,                  // Interrupt Pending and Status Register
     /// HPM
-    iocntovf: VolatileCell<u32>,              // HPM Counter Overflows
-    iocntinh: VolatileCell<u32>,              // HPM Counter Inhibits
-    iohpmcycles: VolatileCell<u64>,           // HPM Cycle Counter
-    iohpmctr: [VolatileCell<u64>; 31],        // HPM Event Counters
-    iohpmevt: [VolatileCell<u64>; 31],        // HPM Event Selector
+    pub iocntovf: VolatileCell<u32>,              // HPM Counter Overflows
+    pub iocntinh: VolatileCell<u32>,              // HPM Counter Inhibits
+    pub iohpmcycles: VolatileCell<u64>,           // HPM Cycle Counter
+    pub iohpmctr: [VolatileCell<u64>; 31],        // HPM Event Counters
+    pub iohpmevt: [VolatileCell<u64>; 31],        // HPM Event Selector
     /// DBG
-    tr_req_iova: VolatileCell<u64>,           // Translation-request IOVA
-    tr_req_ctl: VolatileCell<u64>,            // Translation-request Control
-    tr_response: VolatileCell<u64>,           // Translation-request Response
+    pub tr_req_iova: VolatileCell<u64>,           // Translation-request IOVA
+    pub tr_req_ctl: VolatileCell<u64>,            // Translation-request Control
+    pub tr_response: VolatileCell<u64>,           // Translation-request Response
     __rsv1: [u8; 64],
     __custom2: [u8; 72],
-    icvec: VolatileCell<u64>,                 // Interrupt Control and Vector Register
-    msi_cfg_tbl: [MsiCfgTbl; 16],
+    pub icvec: VolatileCell<u64>,                 // Interrupt Control and Vector Register
+    pub msi_cfg_tbl: [MsiCfgTbl; 16],
     __rsv2: [u8; 3072],
 }
 
-/// Device Directory Table Entry
+
+// Note: If capabilities.MSI_FLAT is 1 then the Extended Format is used else the Base Format is used.
+// Now: only supports Extended Format Device Context
+
+/// Device Directory Table Entry(Extended Format)
 #[repr(C)]
-struct DdtEntry{
+pub struct DdtEntry{
     tc: VolatileCell<u64>,
     iohgatp: VolatileCell<u64>,
     ta: VolatileCell<u64>,
@@ -219,7 +286,7 @@ struct DdtEntry{
 
 /// Fault Queue Entry
 #[repr(C)]
-struct FqEntry{
+pub struct FqEntry{
     tags: VolatileCell<u64>,
     __rsv: u32,
     __custom: u32,
@@ -228,8 +295,8 @@ struct FqEntry{
 }
 
 #[repr(C)]
-struct Iommu{
-    rv_iommu_regmap: &'static mut IommuRegMap,
+pub struct Iommu{
+    pub rv_iommu_regmap: &'static mut IommuRegMap,
     ddt: Vec<Frame>,
     dev_num_max: usize,
     cmd_queue: Vec<Frame>,
@@ -242,7 +309,7 @@ unsafe impl Sync for Iommu {}
 
 impl Iommu {
     /// Create a new IOMMU instance
-    fn new(base: usize) -> Self{
+    pub fn new(base: usize) -> Self{
         // Note: for extened format device context.
         let dev_num_max: usize = match IOMMU_MODE {
             x if x == IommuMode::Ddt1Lvl as usize => 1 << 6,
@@ -261,7 +328,7 @@ impl Iommu {
     }
 
     /// Check IOMMU features
-    fn rv_iommu_check_features(&self) {
+    pub fn rv_iommu_check_features(&self) {
         let caps = self.rv_iommu_regmap.caps.get();
         let version = caps & RV_IOMMU_CAPS_VERSION_MASK;
         // Note: here hvisor supports version 1.0
@@ -347,7 +414,7 @@ impl Iommu {
         }
     }
     
-    fn rv_iommu_init(&mut self){
+    pub fn rv_iommu_init(&mut self){
         // Read and Check IOMMU Capabilities
         self.rv_iommu_check_features();
 
@@ -365,8 +432,8 @@ impl Iommu {
     }
 
     /// Write DDT entry for a device
-    fn rv_iommu_write_ddt(&mut self, device_id: usize, vm_id: usize, root_pt: usize){
-        if device_id < self.dev_num_max {
+    pub fn rv_iommu_write_ddt(&mut self, _device_id: usize, vm_id: usize, root_pt: usize){
+        for device_id in 0..self.dev_num_max {
             // configure DC
             let tc: u64 = RV_IOMMU_DC_TC_VALID_BIT as u64;
             // Note: this only valid for 1lvl DDT
@@ -375,46 +442,45 @@ impl Iommu {
             let mut iohgatp: u64 = 0;
             iohgatp |= ((root_pt as u64) >> 12) & RV_IOMMU_DC_IOHGATP_PPN_MASK as u64;
             iohgatp |= ((vm_id as u64) << 44) & RV_IOMMU_DC_IOHGATP_GSCID_MASK as u64;
-            iohgatp |= ((IoghatpMode::Sv39x4 as u64) << 60) & RV_IOMMU_DC_IOHGATP_MODE_MASK;
+            iohgatp |= ((0xa as u64) << 60) & RV_IOMMU_DC_IOHGATP_MODE_MASK;
             unsafe {
                 (*dc_ptr).tc.set(tc);
                 (*dc_ptr).iohgatp.set(iohgatp);
                 (*dc_ptr).fsc.set(0);
             }
-            info!("RV IOMMU: Write DDT, add decive context, iohgatp {:#x}", iohgatp);
+            info!("RV IOMMU: Write DDT, device id {:#x}, vm id {:#x}, iohgatp {:#x}", device_id, vm_id, iohgatp);
         }
-        else{
-            warn!("RV IOMMU: Invalid device ID: {}", device_id);
-        }
+        // else{
+        //     warn!("RV IOMMU: Invalid device ID: {}", device_id);
+        // }
     }
 
+    /// Update DDT entry's fsc field
+    // pub fn rv_iommu_write_ddt_fsc(&mut self, device_id: usize, mode: IosatpMode, ppn: usize){
+    //     if device_id < self.dev_num_max {
+    //         let fsc_value: u64 = ((mode.into()) << 60) & RV_IOMMU_FSC_MODE_MASK | (ppn as u64 & RV_IOMMU_FSC_PPN_MASK);
+    //         // Note: this only valid for 1lvl DDT
+    //         let ddt_ptr = self.ddt[0].start_paddr() as *mut DdtEntry;
+    //         let dc_ptr = unsafe { ddt_ptr.add(device_id) };
+    //         unsafe {
+    //             (*dc_ptr).fsc.set(fsc_value);
+    //         }
+    //     }
+    //     else{
+    //         warn!("RV IOMMU: Invalid device ID: {}", device_id);
+    //     }
+    // }
+
     /// Handle Command Queue IRQ
-    fn rv_iommu_cq_irq_handler(&mut self) { 
+    pub fn rv_iommu_cq_irq_handler(&mut self) { 
     }
 
     /// Handle Fault Queue IRQ
-    fn rv_iommu_fq_irq_handler(&mut self) {
+    pub fn rv_iommu_fq_irq_handler(&mut self) {
     }
 
     /// Handle Page-request Queue IRQ
-    fn rv_iommu_pq_irq_handler(&mut self) {
+    pub fn rv_iommu_pq_irq_handler(&mut self) {
     }
 
-}
-
-static IOMMU: Once<RwLock<Iommu>> = Once::new();
-
-fn host_iommu<'a>() -> &'a RwLock<Iommu> {
-    IOMMU.get().expect("Uninitialized hypervisor iommu!")
-}
-
-pub fn iommu_init() {
-    IOMMU.call_once(|| RwLock::new(Iommu::new(IOMMU_SYS_BASE)));
-    host_iommu().write().rv_iommu_init();
-}
-
-pub fn iommu_add_device(vmid: usize, sid: usize) {
-    let zone = find_zone(vmid).expect("Invalid vm id!");
-    let root_pt = zone.read().gpm.root_paddr();
-    host_iommu().write().rv_iommu_write_ddt(sid, vmid, root_pt);
 }

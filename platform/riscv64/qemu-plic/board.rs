@@ -15,28 +15,24 @@
 //
 use crate::{arch::zone::HvArchZoneConfig, config::*};
 
+/// Platform Hardware Configuration
 #[allow(unused)]
 pub const BOARD_NAME: &str = "qem-plic";
-
 pub const BOARD_NCPUS: usize = 4;
-
 pub const ACLINT_SSWI_BASE: usize = 0x2F00000;
-
 pub const PLIC_BASE: usize = 0xc000000;
-
-pub const IOMMU_SYS_BASE: usize = 0x3010000;
-
 pub const BOARD_PLIC_INTERRUPTS_NUM: usize = 1023; // except irq 0
+pub const IOMMU_SYS_BASE: usize = 0x3010000;
+pub const IOMMU_SYS_SIZE: usize = 0x1000;
+pub const SIFIVE_TEST_BASE: u64 = 0x100000; // This device is used for qemu-quit.
 
-// This device is used for qemu-quit.
-pub const SIFIVE_TEST_BASE: u64 = 0x100000;
 
+/// Root Zone Configuration
+pub const ROOT_ZONE_NAME: &str = "root-linux";
 pub const ROOT_ZONE_DTB_ADDR: u64 = 0x8f000000;
 pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x90000000;
 pub const ROOT_ZONE_ENTRY: u64 = 0x90000000;
 pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1);
-
-pub const ROOT_ZONE_NAME: &str = "root-linux";
 
 pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
     HvConfigMemoryRegion {
@@ -51,6 +47,12 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
         virtual_start: 0x10000000,
         size: 0x1000,
     }, // serial
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x10008000,
+        virtual_start: 0x10008000,
+        size: 0x1000,
+    }, // virtio-mmio
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0x30000000,
@@ -68,49 +70,13 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
         physical_start: 0x4_0000_0000,
         virtual_start: 0x4_0000_0000,
         size: 0x4_0000_0000,
-    }, // pci-high
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10001000,
-        virtual_start: 0x10001000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10002000,
-        virtual_start: 0x10002000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10003000,
-        virtual_start: 0x10003000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10004000,
-        virtual_start: 0x10004000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10005000,
-        virtual_start: 0x10005000,
-        size: 0x1000,
-    }, // virtio
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x10008000,
-        virtual_start: 0x10008000,
-        size: 0x1000,
-    }, // virtio
+    }, // pci-high-mmio
 ];
 
 // Note: all here's irqs are hardware irqs,
 //  only these irq can be transferred to the physical PLIC.
 pub const HW_IRQS: &[u32] = &[
-    1, 2, 3, 4, 5, 8,   // virtio-mmio
+    0x8, // virtio-mmio
     0xA, // uart0
     0x20, 0x21, 0x22, 0x23, // pci/pcie
     0x24, 0x24, 0x25, 0x27, // iommu
@@ -118,9 +84,10 @@ pub const HW_IRQS: &[u32] = &[
 
 // irqs belong to the root zone.
 pub const ROOT_ZONE_IRQS: &[u32] = &[
-    1, 2, 3, 4, 5, 8,   // virtio-mmio
+    0x8, // virtio-mmio
     0xA, // uart0
     0x20, 0x21, 0x22, 0x23, // pci/pcie
+    0x24, 0x24, 0x25, 0x27, // iommu
 ];
 
 // irqs belong to hvisor.

@@ -57,6 +57,10 @@ impl Zone {
         }
     }
 
+    pub fn get_gpm(&mut self) -> &mut MemorySet<Stage2PageTable> {
+        &mut self.gpm
+    }
+
     // pub fn suspend(&self) {
     //     trace!("suspending cpu_set = {:#x?}", self.cpu_set);
     //     self.cpu_set.iter_except(this_cpu_id()).for_each(|cpu_id| {
@@ -242,6 +246,7 @@ pub fn zone_create(config: &HvZoneConfig) -> HvResult<Arc<RwLock<Zone>>> {
     zone.cpu_num = cpu_num;
     // Initialize the virtual interrupt controller, it needs zone.cpu_num
     zone.virqc_init(config);
+    zone.viommu_init();
 
     zone.irq_bitmap_init(config.interrupts());
 

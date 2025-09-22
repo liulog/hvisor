@@ -107,7 +107,7 @@ where
 
     /// Add a memory region to this set.
     pub fn insert(&mut self, region: MemoryRegion<PT::VA>) -> HvResult {
-        info!("region.start: {:#X}", region.start.into());
+        // info!("region.start: {:#X}", region.start.into());
         assert!(is_aligned(region.start.into()));
         assert!(is_aligned(region.size));
         if region.size == 0 {
@@ -123,6 +123,20 @@ where
         self.pt.map(&region)?;
         self.regions.insert(region.start, region);
         Ok(())
+    }
+
+    /// Get the memory region which contains the `start` address.
+    pub fn get_region(&mut self, start: PT::VA) -> Option<MemoryRegion<PT::VA>> {
+        // Find a region that completely includes the range [start, end)
+        for (key, region) in self.regions.range(..=start) {
+            let region_start = *key;
+            let region_end = region_start.into() + region.size;
+            // Return the region contains the start address
+            if region_start <= start && region_end > start.into() {
+                return Some(region.clone());
+            }
+        }
+        None
     }
 
     /// Find and remove memory region which starts from `start`.
