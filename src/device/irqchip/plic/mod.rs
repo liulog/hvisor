@@ -19,6 +19,7 @@ pub mod vplic;
 
 pub use self::plic::*;
 use self::vplic::*;
+use crate::arch::cpu;
 use crate::arch::zone::HvArchZoneConfig;
 use crate::config::root_zone_config;
 use crate::config::HvZoneConfig;
@@ -55,6 +56,13 @@ pub fn init_plic(plic_base: usize) {
 
 pub fn host_plic<'a>() -> &'a Plic {
     PLIC.get().expect("Uninitialized hypervisor plic!")
+}
+
+pub fn plic_enable_irq(cpu_id: usize, irq_id: usize, enable: bool) {
+    let host_plic = host_plic();
+    host_plic.set_enable_num(2*cpu_id+1, irq_id, enable);
+    host_plic.set_priority(irq_id, 0xFE);
+    warn!("plic_enable_irq cpu_id: {}, irq_id: {}, enable: {}", cpu_id, irq_id, enable);
 }
 
 pub fn primary_init_early() {

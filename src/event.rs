@@ -15,15 +15,15 @@
 //
 #![allow(unused)]
 use crate::{
-    arch::ipi::{arch_check_events, arch_prepare_send_event, arch_send_event},
+    arch::{cpu::this_cpu_id, ipi::{arch_check_events, arch_prepare_send_event, arch_send_event}},
     consts::{
-        IPI_EVENT_CLEAR_INJECT_IRQ, IPI_EVENT_SEND_IPI, IPI_EVENT_UPDATE_HART_LINE, MAX_CPU_NUM,
+        IPI_EVENT_CLEAR_INJECT_IRQ, IPI_EVENT_HART_RESUME, IPI_EVENT_HART_SUSPEND, IPI_EVENT_SEND_IPI, IPI_EVENT_UPDATE_HART_LINE, MAX_CPU_NUM
     },
     device::{
         irqchip::inject_irq,
-        virtio_trampoline::{handle_virtio_irq, IRQ_WAKEUP_VIRTIO_DEVICE},
+        virtio_trampoline::{IRQ_WAKEUP_VIRTIO_DEVICE, handle_virtio_irq},
     },
-    percpu::this_cpu_data,
+    percpu::{CpuSet, this_cpu_data},
 };
 use alloc::{collections::VecDeque, vec::Vec};
 use spin::{Mutex, Once};
@@ -136,7 +136,9 @@ pub fn check_events() -> bool {
         }
         Some(IPI_EVENT_CLEAR_INJECT_IRQ)
         | Some(IPI_EVENT_UPDATE_HART_LINE)
-        | Some(IPI_EVENT_SEND_IPI) => {
+        | Some(IPI_EVENT_SEND_IPI)
+        | Some(IPI_EVENT_HART_SUSPEND)
+        | Some(IPI_EVENT_HART_RESUME) => {
             arch_check_events(event);
             true
         }
@@ -181,6 +183,18 @@ pub fn send_event(cpu_id: usize, ipi_int_id: usize, event_id: usize) {
     arch_prepare_send_event(cpu_id, ipi_int_id, event_id);
     add_event(cpu_id, event_id);
     arch_send_event(cpu_id as _, ipi_int_id as _);
+}
+
+/// Send event to a cpu set (except self).
+pub fn send_event_to_all(cpu_set: CpuSet, ipi_int_id: usize, event_id: usize) {
+    let this_cpu_id = this_cpu_id();
+    for target_cpu_id in cpu_set.iter() {
+        if target_cpu_id == this_cpu_id {
+            continue;
+        }
+        info!("send_event_to_all: send event {} to cpu {}", event_id, target_cpu_id);
+        send_event(target_cpu_id, ipi_int_id, event_id);
+    }
 }
 
 #[test_case]

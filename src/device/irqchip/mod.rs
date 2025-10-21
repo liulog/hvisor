@@ -15,6 +15,8 @@
 //
 use crate::arch::zone::HvArchZoneConfig;
 use crate::config::HvZoneConfig;
+#[cfg(all(feature = "viommu", target_arch = "riscv64"))]
+use crate::platform::{IOMMU_SYS_BASE, IOMMU_SYS_SIZE};
 use crate::zone::Zone;
 
 #[cfg(all(feature = "gicv2", target_arch = "aarch64"))]
@@ -109,7 +111,8 @@ impl Zone {
             #[cfg(feature = "eic7700_sysreg")]
             self.virtual_syscon_mmio_init();
         }
-        self.viommu_mmio_init();
+        #[cfg(all(feature = "viommu"))]
+        self.viommu_mmio_init(IOMMU_SYS_BASE, IOMMU_SYS_SIZE);
     }
 }
 

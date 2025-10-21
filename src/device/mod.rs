@@ -17,6 +17,7 @@ pub mod common;
 pub mod irqchip;
 pub mod uart;
 pub mod virtio_trampoline;
+pub mod iommu;
 
 #[cfg(feature = "eic7700_sysreg")]
 pub mod eic7700_syscrg;

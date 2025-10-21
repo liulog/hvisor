@@ -6,6 +6,7 @@ MODE ?= debug
 BOARD ?= qemu-gicv3
 FEATURES=
 BID ?=
+IOMMU_TRACE ?= 0
 
 # if user uses `make ID=aarch64/qemu-gicv2`, we parse it into ARCH and BOARD
 ifeq ($(BID),)

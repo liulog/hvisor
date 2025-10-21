@@ -1,2 +1,5 @@
 aclint
 plic
+pci
+viommu
+riscv_iommu

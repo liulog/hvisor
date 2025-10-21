@@ -12,21 +12,18 @@
 //      https://www.syswonder.org
 //
 // Authors:
-//
-pub mod consts;
-pub mod cpu;
-pub mod csr;
-pub mod entry;
-pub mod hypercall;
-pub mod ipi;
-pub mod mm;
-pub mod paging;
-pub mod s1pt;
-pub mod s2pt;
-pub mod sbi;
-pub mod trap;
-pub mod zone;
+//      Jingyu Liu <liujingyu24s@ict.ac.cn>
 
-pub use s1pt::Stage1PageTable;
-pub use s2pt::stage2_mode_detect;
-pub use s2pt::Stage2PageTable;
+#![allow(dead_code)]
+
+use crate::consts::PAGE_SIZE;
+
+use super::regs::IommuMode;
+
+/// This driver's global configuration
+pub const IOMMU_MODE: usize = IommuMode::Ddt1Lvl as _;
+pub const IOMMU_CQ_PAGE_NUM: u32 = 1;
+pub const IOMMU_CQ_ENTRY_SIZE: u32 = 16;
+pub const IOMMU_CQ_NUM_ENTRIES: u32 = IOMMU_CQ_PAGE_NUM * PAGE_SIZE as u32 / IOMMU_CQ_ENTRY_SIZE;
+pub const IOMMU_FQ_PAGE_NUM: usize = 1;
+pub const IOMMU_PQ_PAGE_NUM: usize = 1;

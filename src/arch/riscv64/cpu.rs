@@ -26,6 +26,13 @@ use crate::{
     },
 };
 
+#[derive(Debug, PartialEq)] 
+pub enum CpuState {
+    Stopped,
+    Started,
+    Suspended,
+}
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ArchCpu {
@@ -39,6 +46,7 @@ pub struct ArchCpu {
     pub power_on: bool,
     pub init: bool,
     pub sstc: bool,
+    pub state: CpuState,
 }
 
 const PARKING_INST_GPA: usize = 0x0; // wfi instruction address (gpa)
@@ -56,6 +64,7 @@ impl ArchCpu {
             power_on: false,
             init: false,
             sstc: cfg!(feature = "sstc"),
+            state: CpuState::Stopped,
         };
         ret
     }
@@ -128,6 +137,7 @@ impl ArchCpu {
         assert!(this_cpu_id() == self.cpuid);
         // change power_on
         self.power_on = true;
+        self.state = CpuState::Started;
 
         if !self.init {
             self.init = true;
@@ -155,6 +165,7 @@ impl ArchCpu {
         }
         assert!(this_cpu_id() == self.cpuid);
         self.power_on = false;
+        self.state = CpuState::Stopped;
 
         PARKING_MEMORY_SET.call_once(|| {
             let parking_code: [u8; 8] = [0x73, 0x00, 0x50, 0x10, 0x6F, 0xF0, 0xDF, 0xFF]; // 1: wfi; b 1b

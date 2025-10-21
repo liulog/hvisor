@@ -24,29 +24,16 @@ QEMU_ARGS += -device loader,file="$(zone0_dtb)",addr=0x8f000000,force-raw=on
 # QEMU_ARGS += -device loader,file="$(zone1_dtb)",addr=0x83000000,force-raw=on
 
 QEMU_ARGS += -drive if=none,file=$(FSIMG1),id=X10008000,format=raw
-QEMU_ARGS += -device virtio-blk-device,drive=X10008000,bus=virtio-mmio-bus.7
-QEMU_ARGS += -device virtio-serial-device,bus=virtio-mmio-bus.6 -chardev pty,id=X10007000 -device virtconsole,chardev=X10007000 -S
-# QEMU_ARGS += -drive if=none,file=$(FSIMG2),id=X10006000,format=qcow2
+# QEMU_ARGS += -device virtio-blk-device,drive=X10008000,bus=virtio-mmio-bus.7
+QEMU_ARGS += -device virtio-blk-pci,drive=X10008000,iommu_platform=on,disable-legacy=on,bus=pcie.0,addr=01.0
+QEMU_ARGS += -device virtio-serial-device,bus=virtio-mmio-bus.6 -chardev pty,id=X10007000 -device virtconsole,chardev=X10007000 -s -S
+QEMU_ARGS += -drive if=none,file=$(FSIMG2),id=X10006000,format=qcow2
 # QEMU_ARGS += -device virtio-blk-device,drive=X10006000,bus=virtio-mmio-bus.5
-# -------------------------------------------------------------------
+QEMU_ARGS += -device virtio-blk-pci,drive=X10006000,iommu_platform=on,disable-legacy=on,bus=pcie.0,addr=02.0
 
-# QEMU_ARGS := -machine virt
-# QEMU_ARGS += -nographic 
-# QEMU_ARGS += -cpu rv64 
-# QEMU_ARGS += -m 3G 
-# QEMU_ARGS += -smp 4 
-# QEMU_ARGS += -bios default
-# # QEMU_ARGS +=-bios $(BOOTLOADER)
-# QEMU_ARGS += -kernel tenants/Image-62
-# QEMU_ARGS += -drive file=imgs/rootfs-busybox.qcow2,format=qcow2,id=hd0 
-# #QEMU_ARGS +=-drive file=../guests/rootfs-buildroot.qcow2,format=qcow2,id=hd0 
-# QEMU_ARGS += -device virtio-blk-device,drive=hd0 
-# QEMU_ARGS += -append "root=/dev/vda rw console=ttyS0"
-
-# #QEMU_ARGS +=		 -device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) 
-# #QEMU_ARGS +=		 -device loader,file=../guests/os_ch5_802.bin,addr=0x80400000 			 
-# #QEMU_ARGS +=		 -device virtio-serial-port -chardev pty,id=serial3 -device virtconsole,chardev=serial3
-# QEMU_ARGS +=		 -device virtio-serial-device -chardev pty,id=serial3 -device virtconsole,chardev=serial3
+ifeq ($(IOMMU_TRACE), 1)
+  QEMU_ARGS += -d trace:riscv_iommu_*  # -D hvisor.log
+endif
 
 $(hvisor_bin): elf
 	$(OBJCOPY) $(hvisor_elf) --strip-all -O binary $@

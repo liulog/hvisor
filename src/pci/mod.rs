@@ -106,3 +106,18 @@ fn extract_reg_addr(addr: usize) -> usize {
 
     high_bits | low_bits
 }
+
+// #[macro_export]
+// macro_rules! pci_bdf_to_u16 {
+//     ($b:expr, $d:expr, $f:expr) => {{
+//         assert!($b <= 255 && $b >= 0, "Invalid bus number: {}", $b);
+//         assert!($d <= 31 && $d >= 0, "Invalid device number: {}", $d);
+//         assert!($f <= 7 && $f >= 0, "Invalid function number: {}", $f);
+//         (($b) << 8) | (($d) << 3) | ($f)
+//     }};
+// }
+
+/// Convert bus_id, device_id, function_id to a single u16 BDF representation
+pub const fn bdf_to_u16(bus_id: u16, device_id: u16, function_id: u16) -> u16{
+    (bus_id & 0xFF) << 8 | (device_id & 0x1F) << 3 | (function_id & 0x7)
+}

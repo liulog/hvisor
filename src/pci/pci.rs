@@ -39,7 +39,7 @@ use super::{
     NUM_BAR_REGS_TYPE1,
 };
 use crate::arch::consts::{BDF_SHIFT, HV_ADDR_PREFIX, LOONG_HT_PREFIX};
-use crate::arch::iommu::iommu_add_device;
+use crate::device::iommu::iommu_add_device;
 #[derive(Debug)]
 pub struct PciRoot {
     endpoints: Vec<EndpointConfig>,
@@ -185,9 +185,9 @@ impl Zone {
                 alloc_pci_devs[idx] & 0b111
             );
             self.pciroot.alloc_devs.push(alloc_pci_devs[idx] as _);
-            if alloc_pci_devs[idx] != 0 {
-                iommu_add_device(self.id, alloc_pci_devs[idx] as _);
-            }
+            // if alloc_pci_devs[idx] != 0 {
+            //     iommu_add_device(self.id, alloc_pci_devs[idx] as _);
+            // }
         }
 
         if self.id == 0 {

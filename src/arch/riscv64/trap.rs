@@ -26,8 +26,11 @@ use crate::platform::__board::*;
 use core::arch::{asm, global_asm};
 use riscv::register::stvec::TrapMode;
 use riscv::register::{sie, stvec};
+use riscv::asm::{fence, wfi};
+use crate::arch::cpu::CpuState;
 use riscv_decode::Instruction;
 use riscv_h::register::hvip;
+use crate::device::iommu;
 
 extern "C" {
     fn _hyp_trap_vector();
@@ -413,6 +416,22 @@ pub fn handle_software_interrupt(current_cpu: &mut ArchCpu) {
     unsafe {
         riscv::register::sip::clear_ssoft();
     }
+    // If the CPU is suspended, wait for resume signal.
+    loop {
+        unsafe {
+            let state = core::ptr::read_volatile(&this_cpu_data().arch_cpu.state);
+            if CpuState::Suspended == state {
+                wfi();
+                while check_events() { }    // Hvisor don't handle nested interrupt, so it will return to pc+4.
+                unsafe {
+                    riscv::register::sip::clear_ssoft();
+                }
+                info!("cpu {} resume from suspend", current_cpu.cpuid);
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 /// Handle supervisor external interrupt.
@@ -429,8 +448,13 @@ pub fn handle_external_interrupt(current_cpu: &mut ArchCpu) {
             return;
         }
 
-        // 2. inject hw irq to zone.
-        crate::device::irqchip::plic::inject_irq(irq_id as usize, true);
+        if IOMMU_IRQS.iter().any(|&x| x == irq_id as u32) {
+            // This irq belongs to iommu device. (hypervisor handles it)
+            iommu::iommu_interrupt_handler(irq_id);
+        } else {
+            // 2. inject hw irq to zone.
+            crate::device::irqchip::plic::inject_irq(irq_id as usize, true);
+        }
     }
     #[cfg(feature = "aia")]
     {

@@ -51,6 +51,10 @@ pub const IPI_EVENT_CLEAR_INJECT_IRQ: usize = 4;
 pub const IPI_EVENT_UPDATE_HART_LINE: usize = 5;
 pub const IPI_EVENT_SEND_IPI: usize = 6;
 
+/// ipi events for hart management
+pub const IPI_EVENT_HART_SUSPEND: usize = 7;
+pub const IPI_EVENT_HART_RESUME: usize = 8;
+
 extern "C" {
     fn __core_end();
 }

@@ -44,7 +44,7 @@ pub const MAX_CPUS: usize = 32;
 #[cfg(not(target_arch = "riscv64"))]
 pub const IRQ_WAKEUP_VIRTIO_DEVICE: usize = 32 + 0x20;
 #[cfg(target_arch = "riscv64")]
-pub const IRQ_WAKEUP_VIRTIO_DEVICE: usize = 0x20;
+pub const IRQ_WAKEUP_VIRTIO_DEVICE: usize = 0x10;
 
 /// non root zone's virtio request handler
 pub fn mmio_virtio_handler(mmio: &mut MMIOAccess, base: usize) -> HvResult {

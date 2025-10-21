@@ -65,9 +65,9 @@ mod pci;
 #[cfg(test)]
 mod tests;
 
-use crate::arch::iommu::iommu_init;
 use crate::arch::mm::arch_setup_parange;
 use crate::consts::{hv_end, mem_pool_start, MAX_CPU_NUM};
+use crate::platform::{IOMMU_SYS_BASE, IOMMU_SYS_SIZE};
 use arch::{cpu::cpu_start, entry::arch_entry};
 use config::root_zone_config;
 use core::sync::atomic::{AtomicI32, AtomicU32, Ordering};
@@ -131,7 +131,7 @@ fn primary_init_early() {
 
     device::irqchip::primary_init_early();
 
-    iommu_init();
+    device::iommu::iommu_init(IOMMU_SYS_BASE, IOMMU_SYS_SIZE);
 
     #[cfg(not(test))]
     {

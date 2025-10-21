@@ -142,6 +142,12 @@ impl VirtPciBar {
     }
 
     pub fn write(&mut self, new_val: u32) {
-        self.val = new_val & self.mask;
+        if self.mask == 0xFFFF_FFFFu32 {
+            // For Mem64, high 32 bits are all mutable
+            self.val = (new_val & self.mask);
+        } else {
+            // For Mem32/IO and Mem64 low 32 bits, the lower 4 bits are read-only
+            self.val = (new_val & self.mask & 0xFFFF_FFF0u32) | (self.val & 0xFu32);
+        }
     }
 }
