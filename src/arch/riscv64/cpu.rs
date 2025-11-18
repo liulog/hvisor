@@ -26,6 +26,7 @@ use crate::{
     },
     zone::find_zone,
 };
+use crate::platform::{BOARD_HARTID_MAP, BOARD_NCPUS};
 
 #[repr(C)]
 #[derive(Debug)]
@@ -218,8 +219,15 @@ pub fn this_cpu_id() -> usize {
     this_cpu_arch().get_cpuid()
 }
 
+pub fn hartid_to_cpuid(hartid: usize) -> usize {
+    (0..BOARD_NCPUS)
+        .find(|&i| BOARD_HARTID_MAP[i] == hartid)
+        .unwrap()
+}
+
 pub fn cpu_start(cpuid: usize, start_addr: usize, opaque: usize) {
-    if let Some(e) = sbi_rt::hart_start(cpuid, start_addr, opaque).err() {
+    // Convert cpuid to hartid
+    if let Some(e) = sbi_rt::hart_start(BOARD_HARTID_MAP[cpuid], start_addr, opaque).err() {
         panic!("cpu_start error: {:#x?}", e);
     }
 }

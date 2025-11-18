@@ -29,6 +29,7 @@ use sbi_spec::binary::{
     RET_ERR_ALREADY_AVAILABLE, RET_ERR_FAILED, RET_ERR_NOT_SUPPORTED, RET_SUCCESS,
 };
 use sbi_spec::{base, hsm, legacy, rfnc, spi, time};
+use crate::arch::cpu::hartid_to_cpuid;
 
 // Reserved for hvisor-tool.
 pub const EID_HVISOR: usize = 0x114514;
@@ -262,7 +263,7 @@ pub fn sbi_hsm_start_handler(current_cpu: &mut ArchCpu) -> SbiRet {
         error: RET_SUCCESS,
         value: 0,
     };
-    let cpuid = current_cpu.x[10]; // In hvisor, it is physical cpu id.
+    let cpuid = hartid_to_cpuid(current_cpu.x[10]); // convert to hvisor's logical cpuid
     let start_addr = current_cpu.x[11];
     let opaque = current_cpu.x[12];
     if cpuid == current_cpu.cpuid {
@@ -304,11 +305,11 @@ pub fn sbi_ipi_handler(fid: usize, current_cpu: &mut ArchCpu) -> SbiRet {
     let hart_mask = current_cpu.x[10];
     let hart_mask_base = current_cpu.x[11];
     let hart_mask_bits = HartMask::from_mask_base(hart_mask, hart_mask_base);
-    for cpu_id in 0..64 {
+    for hart_id in 0..64 {
         // hart_mask is 64 bits
-        if hart_mask_bits.has_bit(cpu_id) {
+        if hart_mask_bits.has_bit(hart_id) {
             // the second parameter is ignored is riscv64.
-            send_event(cpu_id, 0, IPI_EVENT_SEND_IPI);
+            send_event(hartid_to_cpuid(hart_id), 0, IPI_EVENT_SEND_IPI);
         }
     }
     SbiRet {

@@ -70,6 +70,8 @@ pub const PLIC_COMPLETE_OFFSET: usize = 0x200004;
 pub const PLIC_MAX_IRQ: usize = 1023; // 1-1023, in PLIC, irq 0 does not exist.
 pub const PLIC_MAX_CONTEXT: usize = 15872;
 
+use crate::platform::NUM_CONTEXTS_PER_HART;
+
 /// Plic struct
 pub struct Plic {
     base: usize,
@@ -109,7 +111,7 @@ impl Plic {
     pub fn init_per_hart(&self, cpu_id: usize) {
         // set threshold to 0
         info!("PLIC init per hart: cpu_id = {}", cpu_id);
-        let context = cpu_id * 2 + 1;
+        let context = cpu_id * NUM_CONTEXTS_PER_HART + 1;
         self.set_threshold(context, 0);
     }
 

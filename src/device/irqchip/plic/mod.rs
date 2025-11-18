@@ -61,7 +61,7 @@ pub fn primary_init_early() {
     // Init the physical PLIC global part
     let root_config = root_zone_config();
     init_plic(root_config.arch_config.plic_base as usize);
-    host_plic().init_global(BOARD_PLIC_INTERRUPTS_NUM, MAX_CPU_NUM * 2);
+    host_plic().init_global(BOARD_PLIC_INTERRUPTS_NUM, MAX_CPU_NUM * NUM_CONTEXTS_PER_HART);
 
     unsafe {
         VPLIC_MAP = Some(FnvIndexMap::new());
@@ -78,7 +78,7 @@ pub fn percpu_init() {
 
 pub fn inject_irq(irq: usize, is_hardware: bool) {
     debug!("inject_irq: {} is_hardware: {}", irq, is_hardware);
-    let vcontext_id = pcontext_to_vcontext(this_cpu_data().id * 2 + 1);
+    let vcontext_id = pcontext_to_vcontext(this_cpu_data().id * NUM_CONTEXTS_PER_HART + 1);
     this_cpu_data()
         .zone
         .as_ref()
@@ -98,9 +98,9 @@ pub fn vcontext_to_pcontext(vcontext_id: usize) -> usize {
         .cpu_set
         .iter()
         .collect::<Vec<_>>();
-    let index = vcontext_id / 2;
+    let index = vcontext_id / NUM_CONTEXTS_PER_HART;
     // convert to physical hart S-mode
-    pcpu_set[index] * 2 + 1
+    pcpu_set[index] * NUM_CONTEXTS_PER_HART + 1
 }
 
 /// Convert pcontext id to vcontext id.
@@ -123,7 +123,7 @@ pub fn pcontext_to_vcontext(pcontext_id: usize) -> usize {
         }
     }
     // convert to virtual hart S-mode
-    index * 2 + 1
+    index * NUM_CONTEXTS_PER_HART + 1
 }
 
 /// handle Zone's plic mmio access.
@@ -144,7 +144,7 @@ pub fn vplic_handler(mmio: &mut MMIOAccess, _arg: usize) -> HvResult {
 
 /// Update hart line handler.
 pub fn update_hart_line() {
-    let pcontext_id = this_cpu_data().id * 2 + 1;
+    let pcontext_id = this_cpu_data().id * NUM_CONTEXTS_PER_HART + 1;
     let vcontext_id = pcontext_to_vcontext(pcontext_id);
     this_cpu_data()
         .zone
@@ -179,7 +179,7 @@ impl Zone {
                 let vplic = vplic::VirtualPLIC::new(
                     config.arch_config.plic_base,
                     BOARD_PLIC_INTERRUPTS_NUM,
-                    self.cpu_num * 2,
+                    self.cpu_num * NUM_CONTEXTS_PER_HART,
                 );
                 // Insert into Map <zone_id, vplic>
                 let _ = map.insert(self.id, vplic);
@@ -219,7 +219,7 @@ impl Zone {
                     host_plic.set_priority(irq_id, 0);
                     // Reset enable
                     self.cpu_set.iter().for_each(|cpuid| {
-                        let pcontext_id = cpuid * 2 + 1;
+                        let pcontext_id = cpuid * NUM_CONTEXTS_PER_HART + 1;
                         info!(
                             "Reset pcontext_id {} irq_id {} enable to false",
                             pcontext_id, irq_id
@@ -231,7 +231,7 @@ impl Zone {
         }
         self.cpu_set.iter().for_each(|cpuid| {
             // Reset threshold
-            let pcontext_id = cpuid * 2 + 1;
+            let pcontext_id = cpuid * NUM_CONTEXTS_PER_HART + 1;
             info!("Reset pcontext_id {} threshold to 0", pcontext_id);
             host_plic.set_threshold(pcontext_id, 0);
             // At the same time, clear the events related to this cpu.

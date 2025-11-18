@@ -421,7 +421,7 @@ pub fn handle_external_interrupt(current_cpu: &mut ArchCpu) {
     {
         // Note: in hvisor, all external interrupts are assigned to VS.
         // 1. claim hw irq.
-        let context_id = 2 * this_cpu_data().id + 1;
+        let context_id = NUM_CONTEXTS_PER_HART * this_cpu_data().id + 1;
         let irq_id = crate::device::irqchip::plic::host_plic().claim(context_id);
 
         // If this irq has been claimed, it will be 0.
