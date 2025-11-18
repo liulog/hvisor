@@ -101,7 +101,7 @@ impl Plic {
         }
         // set enable to 0
         for i in 0..num_contexts {
-            for j in 0..(num_interrupts + 31 / 32) {
+            for j in 0..((num_interrupts + 31) / 32) {
                 self.set_enable(i, j * 4, 0);
             }
         }
