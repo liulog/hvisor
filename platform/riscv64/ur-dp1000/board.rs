@@ -11,7 +11,7 @@
 // Syswonder Website:
 //      https://www.syswonder.org
 //
-// Authors: 
+// Authors:
 //      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 
@@ -53,14 +53,14 @@ pub const ROOT_ZONE_DTB_ADDR: u64 = 0x8F000000;
 pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x90000000;
 // ROOT_ZONE_ENTRY is GPA (Guest Physical Address).
 pub const ROOT_ZONE_ENTRY: u64 = 0x90000000;
-pub const ROOT_ZONE_CPUS: u64 = 0xFF; // 8 harts
+pub const ROOT_ZONE_CPUS: u64 = 0x1; // 8 harts
 
 pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_RAM,
         physical_start: 0x8000_0000,
         virtual_start: 0x8000_0000,
-        size: 0x8_0000_0000,    // 32GB
+        size: 0x8_0000_0000, // 32GB
     }, // ram
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
@@ -68,12 +68,6 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
         virtual_start: 0x2030_0000,
         size: 0x1_0000,
     }, // serial0
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x2031_0000,
-        virtual_start: 0x2031_0000,
-        size: 0x1_0000,
-    }, // serial1
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0x2300_0000,
@@ -108,22 +102,29 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
 
 // Note: all here's irqs are hardware irqs,
 //  only these irq can be transferred to the physical PLIC.
+#[rustfmt::skip]
 pub const HW_IRQS: &[u32] = &[
     0x11, // serial@20300000
-    0x12, // serial@20310000
+    25, // serial@20400000
+    26, // serial@20410000
     0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, // pcie_x4a@23000000, msi, inta, intb, intc, intd, aer
+    152, //dma-controller@39000000
+    34, // gpio@20200000
+    33, // watchdog@20210000
+    20, 21, 28, 29, // i2c0, i2c1, spi0, spi1
+    19, 27, // spi0, spi1
 ];
 
 // irqs belong to the root zone.
+#[rustfmt::skip]
 pub const ROOT_ZONE_IRQS: &[u32] = &[
     0x11, // serial@20300000
-    0x12, // serial@20310000
     0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, // pcie_x4a@23000000, msi, inta, intb, intc, intd, aer
 ];
 
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
     plic_base: PLIC_BASE,
     plic_size: PLIC_SIZE,
-    aplic_base: 0x0,        // UNUSED for PLIC
-    aplic_size: 0x0,        // UNUSED for PLIC
+    aplic_base: 0x0, // UNUSED for PLIC
+    aplic_size: 0x0, // UNUSED for PLIC
 };

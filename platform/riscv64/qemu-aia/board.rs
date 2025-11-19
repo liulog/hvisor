@@ -18,6 +18,13 @@ use crate::{arch::zone::HvArchZoneConfig, config::*};
 pub const BOARD_NAME: &str = "qemu-aia";
 
 pub const BOARD_NCPUS: usize = 4;
+#[rustfmt::skip]
+pub static BOARD_HARTID_MAP: [usize; BOARD_NCPUS] = [
+    0x0,            // core0   \
+    0x1,            // core1    | -> cluster0 -> CPU
+    0x2,            // core2    |
+    0x3,            // core3   / 
+];
 
 pub const TIMEBASE_FREQ: u64 = 10_000_000; // 10MHz
 

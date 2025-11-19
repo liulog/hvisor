@@ -15,9 +15,9 @@
 //      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 use crate::consts::{IPI_EVENT_SEND_IPI, IPI_EVENT_UPDATE_HART_LINE};
+use crate::platform::BOARD_HARTID_MAP;
 use sbi_rt::HartMask;
 use sbi_rt::SbiRet;
-use crate::platform::BOARD_HARTID_MAP;
 
 // arch_send_event
 pub fn arch_send_event(cpu_id: u64, _sgi_num: u64) {
@@ -59,5 +59,5 @@ pub fn arch_check_events(event: Option<usize>) {
 }
 
 pub fn arch_prepare_send_event(cpu_id: usize, ipi_int_id: usize, event_id: usize) {
-    debug!("risc-v arch_prepare_send_event: do nothing now.")
+    // debug!("risc-v arch_prepare_send_event: do nothing now.")
 }

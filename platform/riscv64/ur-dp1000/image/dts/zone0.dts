@@ -1,9 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0+
-/*
- * Copyright (c) 2019-2022 UltraRISC Technology (Shanghai) Co., Ltd.
- *
- */
-
 /dts-v1/;
 
 / {
@@ -13,7 +7,7 @@
 	model = "ultrarisc,dp1000";
 
 	chosen {
-		bootargs = "earlycon=sbi console=ttyS0,115200";
+		bootargs = "earlycon=sbi console=ttyS0,115200 root=/dev/nvme0n1p2 rootfstype=ext4 rw rootwait init=/bin/bash";
 		stdout-path = "/soc/serial@20300000";
 	};
 
@@ -22,7 +16,7 @@
 		#size-cells = <0x00>;
 		timebase-frequency = <10000000>;
 
-		cpu0: cpu@0 {
+    	cpu0: cpu@0 {
 			device_type = "cpu";
 			reg = <0x00>;
 			status = "okay";
@@ -31,111 +25,6 @@
 			mmu-type = "riscv,sv48";
 			clock-frequency = <2000000000>;
 			cpu0_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu1: cpu@1 {
-			device_type = "cpu";
-			reg = <0x1>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu1_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu2: cpu@2 {
-			device_type = "cpu";
-			reg = <0x2>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu2_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu3: cpu@3 {
-			device_type = "cpu";
-			reg = <0x3>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu3_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu4: cpu@4 {
-			device_type = "cpu";
-			reg = <0x10>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu4_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu5: cpu@5 {
-			device_type = "cpu";
-			reg = <0x11>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu5_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu6: cpu@6 {
-			device_type = "cpu";
-			reg = <0x12>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu6_intc:interrupt-controller {
-				#address-cells = <0x01>;
-				interrupt-controller;
-				compatible = "riscv,cpu-intc";
-				#interrupt-cells = <0x01>;
-			};
-		};
-		cpu7: cpu@7 {
-			device_type = "cpu";
-			reg = <0x13>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcb";
-			mmu-type = "riscv,sv48";
-			clock-frequency = <2000000000>;
-			cpu7_intc:interrupt-controller {
 				#address-cells = <0x01>;
 				interrupt-controller;
 				compatible = "riscv,cpu-intc";
@@ -188,16 +77,9 @@
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
 			phandle = <0x01>;
-			compatible = "ultrarisc,dp1000-plic";
+			compatible = "sifive,plic-1.0.0";
 			interrupt-controller;
-			interrupts-extended = <&cpu0_intc 0xb>, <&cpu0_intc 0x9>, <&cpu0_intc 0xa>,
-			<&cpu1_intc 0xb>, <&cpu1_intc 0x9>, <&cpu1_intc 0xa>,
-			<&cpu2_intc 0xb>, <&cpu2_intc 0x9>, <&cpu2_intc 0xa>,
-			<&cpu3_intc 0xb>, <&cpu3_intc 0x9>, <&cpu3_intc 0xa>,
-			<&cpu4_intc 0xb>, <&cpu4_intc 0x9>, <&cpu4_intc 0xa>,
-			<&cpu5_intc 0xb>, <&cpu5_intc 0x9>, <&cpu5_intc 0xa>,
-			<&cpu6_intc 0xb>, <&cpu6_intc 0x9>, <&cpu6_intc 0xa>,
-			<&cpu7_intc 0xb>, <&cpu7_intc 0x9>, <&cpu7_intc 0xa>;
+			interrupts-extended = <&cpu0_intc 0xffffffff>, <&cpu0_intc 0x9>, <&cpu0_intc 0xffffffff>;
 			reg = <0x00 0x9000000 0x00 0x4000000>;
 			riscv,max-priority = <0x07>;
 			riscv,ndev = <160>;
@@ -239,5 +121,11 @@
 					<0x0 0x0 0x0 0x3 &plic 66>,
 					<0x0 0x0 0x0 0x4 &plic 67>;
 		};
+	};
+
+    hvisor_virtio_device {
+		compatible = "hvisor";
+    	interrupt-parent = <&plic>;
+    	interrupts = <0x20>;
 	};
 };

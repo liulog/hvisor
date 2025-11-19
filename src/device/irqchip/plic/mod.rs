@@ -14,27 +14,28 @@
 // Authors: Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 
+#![deny(unused_variables)]
+#![deny(unused_imports)]
+#![deny(unused_mut)]
+#![deny(unused)]
+
 pub mod plic;
 pub mod vplic;
 
 pub use self::plic::*;
 use self::vplic::*;
+use crate::arch::cpu::this_cpu_id;
 use crate::arch::zone::HvArchZoneConfig;
-use crate::config::root_zone_config;
 use crate::config::HvZoneConfig;
 use crate::consts::{MAX_CPU_NUM, MAX_ZONE_NUM};
 use crate::error::HvResult;
 use crate::memory::mmio::MMIOAccess;
-use crate::memory::GuestPhysAddr;
-use crate::percpu::this_zone;
+use crate::percpu::this_cpu_data;
 use crate::platform::__board::*;
 use crate::platform::BOARD_PLIC_INTERRUPTS_NUM;
 use crate::zone::Zone;
-use crate::{arch::cpu::ArchCpu, percpu::this_cpu_data};
 use alloc::vec::Vec;
 use heapless::FnvIndexMap;
-use riscv_decode::Instruction;
-use riscv_h::register::hvip;
 use spin::Once;
 
 /*
@@ -59,10 +60,11 @@ pub fn host_plic<'a>() -> &'a Plic {
 
 pub fn primary_init_early() {
     // Init the physical PLIC global part
-    let root_config = root_zone_config();
-    init_plic(root_config.arch_config.plic_base as usize);
-    host_plic().init_global(BOARD_PLIC_INTERRUPTS_NUM, MAX_CPU_NUM * NUM_CONTEXTS_PER_HART);
-
+    init_plic(PLIC_BASE);
+    host_plic().init_global(
+        BOARD_PLIC_INTERRUPTS_NUM,
+        MAX_CPU_NUM * NUM_CONTEXTS_PER_HART,
+    );
     unsafe {
         VPLIC_MAP = Some(FnvIndexMap::new());
     }
@@ -74,6 +76,11 @@ pub fn primary_init_late() {
 
 pub fn percpu_init() {
     host_plic().init_per_hart(this_cpu_data().id);
+}
+
+pub fn plic_get_hwirq() -> u32 {
+    let context_id = this_cpu_id() * NUM_CONTEXTS_PER_HART + 1;
+    host_plic().plic_get_hwirq(context_id)
 }
 
 pub fn inject_irq(irq: usize, is_hardware: bool) {
@@ -104,7 +111,7 @@ pub fn vcontext_to_pcontext(vcontext_id: usize) -> usize {
 }
 
 /// Convert pcontext id to vcontext id.
-pub fn pcontext_to_vcontext(pcontext_id: usize) -> usize {
+pub fn pcontext_to_vcontext(_pcontext_id: usize) -> usize {
     // vcpu is the pcpus index of the pcpu_set
     let pcpu_set = this_cpu_data()
         .zone
@@ -205,7 +212,7 @@ impl Zone {
         // We should make sure only one cpu to do this.
         // This func will only be called by one root zone's cpu.
         let host_plic = host_plic();
-        let vplic = self.get_vplic();
+        let _vplic = self.get_vplic();
         for (index, &word) in self.irq_bitmap.iter().enumerate() {
             for bit_position in 0..32 {
                 if word & (1 << bit_position) != 0 {

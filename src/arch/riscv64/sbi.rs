@@ -16,6 +16,7 @@
 //! SBI call wrappers
 
 use super::cpu::ArchCpu;
+use crate::arch::cpu::hartid_to_cpuid;
 use crate::arch::csr::*;
 use crate::consts::IPI_EVENT_SEND_IPI;
 use crate::event::{send_event, IPI_EVENT_WAKEUP};
@@ -29,7 +30,6 @@ use sbi_spec::binary::{
     RET_ERR_ALREADY_AVAILABLE, RET_ERR_FAILED, RET_ERR_NOT_SUPPORTED, RET_SUCCESS,
 };
 use sbi_spec::{base, hsm, legacy, rfnc, spi, time};
-use crate::arch::cpu::hartid_to_cpuid;
 
 // Reserved for hvisor-tool.
 pub const EID_HVISOR: usize = 0x114514;

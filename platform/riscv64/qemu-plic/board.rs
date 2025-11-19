@@ -11,7 +11,7 @@
 // Syswonder Website:
 //      https://www.syswonder.org
 //
-// Authors: 
+// Authors:
 //      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 use crate::{arch::zone::HvArchZoneConfig, config::*};
@@ -118,12 +118,12 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
 
 // Note: all here's irqs are hardware irqs,
 //  only these irq can be transferred to the physical PLIC.
+// If you have one irq_iq = 0x20, you should modify IRQ_WAKEUP_VIRTIO_DEVICE(default 0x20) in virtio_trampoline.rs to avoid 0x20.
 pub const HW_IRQS: &[u32] = &[
-    0x6,
-    0x7, // virtio-mmio
+    // 0x6, 0x7, // virtio-mmio
     0x8, // virtio-mmio
     0xA, // uart0
-    0x20, 0x21, 0x22, 0x23, // pci/pcie
+    // 0x20, 0x21, 0x22, 0x23, // pci/pcie
 ];
 
 // irqs belong to the root zone.
@@ -132,7 +132,7 @@ pub const ROOT_ZONE_IRQS: &[u32] = &[
     0x8,        // virtio-mmio
     0xA,        // uart0
     // 0x20,    // pci pinA
-    0x21,       // pci pinB
+    // 0x21,    // pci pinB
     // 0x22,    // pci pinC
     // 0x23,    // pci pinD
 ];
@@ -140,6 +140,6 @@ pub const ROOT_ZONE_IRQS: &[u32] = &[
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
     plic_base: PLIC_BASE,
     plic_size: PLIC_SIZE,
-    aplic_base: 0x0,    // Unused here
-    aplic_size: 0x0,    // Unused here
+    aplic_base: 0x0, // Unused here
+    aplic_size: 0x0, // Unused here
 };
