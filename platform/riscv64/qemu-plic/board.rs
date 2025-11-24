@@ -120,7 +120,7 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
 //  only these irq can be transferred to the physical PLIC.
 // If you have one irq_iq = 0x20, you should modify IRQ_WAKEUP_VIRTIO_DEVICE(default 0x20) in virtio_trampoline.rs to avoid 0x20.
 pub const HW_IRQS: &[u32] = &[
-    // 0x6, 0x7, // virtio-mmio
+    0x6, 0x7, // virtio-mmio
     0x8, // virtio-mmio
     0xA, // uart0
     // 0x20, 0x21, 0x22, 0x23, // pci/pcie
