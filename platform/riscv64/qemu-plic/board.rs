@@ -14,10 +14,12 @@
 // Authors:
 //      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
+
+#![allow(unused)]
+
 use crate::{arch::zone::HvArchZoneConfig, config::*};
 
 /// Platform Hardware Configuration
-#[allow(unused)]
 pub const BOARD_NAME: &str = "qem-plic";
 
 pub const BOARD_NCPUS: usize = 4;
@@ -119,8 +121,9 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
 // Note: all here's irqs are hardware irqs,
 //  only these irq can be transferred to the physical PLIC.
 // If you have one irq_iq = 0x20, you should modify IRQ_WAKEUP_VIRTIO_DEVICE(default 0x20) in virtio_trampoline.rs to avoid 0x20.
+#[rustfmt::skip]
 pub const HW_IRQS: &[u32] = &[
-    0x6, 0x7, // virtio-mmio
+    // 0x6, 0x7, // virtio-mmio
     0x8, // virtio-mmio
     0xA, // uart0
     // 0x20, 0x21, 0x22, 0x23, // pci/pcie

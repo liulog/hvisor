@@ -14,7 +14,7 @@
 			reg = <0x02>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcsu";
+			riscv,isa = "rv64imafdcsu_sstc";
 			mmu-type = "riscv,sv39";
 
 			interrupt-controller {
@@ -30,7 +30,7 @@
 			reg = <0x03>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcsu";
+			riscv,isa = "rv64imafdcsu_sstc";
 			mmu-type = "riscv,sv39";
 
 			interrupt-controller {

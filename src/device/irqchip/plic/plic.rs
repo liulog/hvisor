@@ -11,7 +11,8 @@
 // Syswonder Website:
 //      https://www.syswonder.org
 //
-// Authors: Jingyu Liu <liujingyu24s@ict.ac.cn>
+// Authors:
+//      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 
 /*

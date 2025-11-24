@@ -12,11 +12,11 @@
 //      https://www.syswonder.org
 //
 // Authors:
+//      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 
-use crate::percpu::this_cpu_data;
+use crate::arch::cpu::this_cpu_id;
 use crate::platform::NUM_CONTEXTS_PER_HART;
-use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitvec::prelude::*;
 use spin::Mutex;
@@ -31,7 +31,7 @@ pub struct VirtualPLIC {
     /// Number of Hart contexts (contains S-mode and M-mode), only S-mode works
     num_contexts: usize,
     /// Inner state of the vPLIC (thread-safe)
-    inner: Arc<Mutex<VirtualPLICInner>>,
+    inner: Mutex<VirtualPLICInner>,
 }
 
 /// Inner state of the vPLIC
@@ -68,7 +68,7 @@ impl VirtualPLIC {
             base_addr,
             max_interrupts,
             num_contexts,
-            inner: Arc::new(Mutex::new(vplic)),
+            inner: Mutex::new(vplic),
         }
     }
 
@@ -409,7 +409,7 @@ impl VirtualPLICInner {
             "vPLIC update line to vcontext_id {}, pcontext_id {}",
             vcontext_id, pcontext_id
         );
-        if pcontext_id / NUM_CONTEXTS_PER_HART == this_cpu_data().id {
+        if pcontext_id / NUM_CONTEXTS_PER_HART == this_cpu_id() {
             let irq_id = self.vplic_get_next_pending(vcontext_id);
             if irq_id != 0 {
                 unsafe {

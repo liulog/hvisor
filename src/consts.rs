@@ -13,6 +13,9 @@
 //
 // Authors:
 //
+
+#![allow(unused)]
+
 pub use crate::memory::PAGE_SIZE;
 use crate::{memory::addr::VirtAddr, platform::BOARD_NCPUS};
 

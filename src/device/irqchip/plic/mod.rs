@@ -11,7 +11,8 @@
 // Syswonder Website:
 //      https://www.syswonder.org
 //
-// Authors: Jingyu Liu <liujingyu24s@ict.ac.cn>
+// Authors:
+//      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
 
 #![deny(unused_variables)]
@@ -19,36 +20,36 @@
 #![deny(unused_mut)]
 #![deny(unused)]
 
-pub mod plic;
-pub mod vplic;
+mod plic;
+mod vplic;
 
-pub use self::plic::*;
-use self::vplic::*;
 use crate::arch::cpu::this_cpu_id;
 use crate::arch::zone::HvArchZoneConfig;
 use crate::config::HvZoneConfig;
-use crate::consts::{MAX_CPU_NUM, MAX_ZONE_NUM};
+use crate::consts::MAX_CPU_NUM;
 use crate::error::HvResult;
 use crate::memory::mmio::MMIOAccess;
 use crate::percpu::this_cpu_data;
-use crate::platform::__board::*;
-use crate::platform::BOARD_PLIC_INTERRUPTS_NUM;
+use crate::platform::*;
 use crate::zone::Zone;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use heapless::FnvIndexMap;
-use spin::Once;
+use plic::*;
+use spin::{Mutex, Once};
+use vplic::*;
 
 /*
-   Due to hvisor is a static partitioning hypervisor.
-   The irq is assigned to a specific zone, a zone has its own harts.
-   So we assume different harts will don't access the same plic register.
-   For physical plic, we don't add lock for it.
+    Due to hvisor is a static partitioning hypervisor.
+    The irq is assigned to a specific zone, a zone has its own harts.
+    So we assume different harts will don't access the same plic register.
+    For physical plic, we don't add lock for it.
 */
 
 // Physical PLIC
-pub static PLIC: Once<Plic> = Once::new();
-// The MAX_ZONE_NUM should be the power of 2.
-static mut VPLIC_MAP: Option<FnvIndexMap<usize, VirtualPLIC, MAX_ZONE_NUM>> = None;
+static PLIC: Once<Plic> = Once::new();
+// VPLIC_MAP, one VPLIC per VM
+static VPLIC_MAP: Mutex<BTreeMap<usize, Arc<VirtualPLIC>>> = Mutex::new(BTreeMap::new());
 
 pub fn init_plic(plic_base: usize) {
     PLIC.call_once(|| Plic::new(plic_base));
@@ -65,9 +66,6 @@ pub fn primary_init_early() {
         BOARD_PLIC_INTERRUPTS_NUM,
         MAX_CPU_NUM * NUM_CONTEXTS_PER_HART,
     );
-    unsafe {
-        VPLIC_MAP = Some(FnvIndexMap::new());
-    }
 }
 
 pub fn primary_init_late() {
@@ -75,7 +73,7 @@ pub fn primary_init_late() {
 }
 
 pub fn percpu_init() {
-    host_plic().init_per_hart(this_cpu_data().id);
+    host_plic().init_per_hart(this_cpu_id());
 }
 
 pub fn plic_get_hwirq() -> u32 {
@@ -85,7 +83,7 @@ pub fn plic_get_hwirq() -> u32 {
 
 pub fn inject_irq(irq: usize, is_hardware: bool) {
     debug!("inject_irq: {} is_hardware: {}", irq, is_hardware);
-    let vcontext_id = pcontext_to_vcontext(this_cpu_data().id * NUM_CONTEXTS_PER_HART + 1);
+    let vcontext_id = pcontext_to_vcontext(this_cpu_id() * NUM_CONTEXTS_PER_HART + 1);
     this_cpu_data()
         .zone
         .as_ref()
@@ -121,7 +119,7 @@ pub fn pcontext_to_vcontext(_pcontext_id: usize) -> usize {
         .cpu_set
         .iter()
         .collect::<Vec<_>>();
-    let pcpu_id = this_cpu_data().id;
+    let pcpu_id = this_cpu_id();
     let mut index = 0;
     for (i, &id) in pcpu_set.iter().enumerate() {
         if id == pcpu_id {
@@ -151,7 +149,7 @@ pub fn vplic_handler(mmio: &mut MMIOAccess, _arg: usize) -> HvResult {
 
 /// Update hart line handler.
 pub fn update_hart_line() {
-    let pcontext_id = this_cpu_data().id * NUM_CONTEXTS_PER_HART + 1;
+    let pcontext_id = this_cpu_id() * NUM_CONTEXTS_PER_HART + 1;
     let vcontext_id = pcontext_to_vcontext(pcontext_id);
     this_cpu_data()
         .zone
@@ -165,12 +163,9 @@ pub fn update_hart_line() {
 /// Print all keys in the VPLIC_MAP for debugging purposes.
 fn print_keys() {
     info!("VPLIC_MAP keys:");
-    unsafe {
-        if let Some(map) = &VPLIC_MAP {
-            for (&key, _) in map.iter() {
-                info!("Zone {} in VPLIC_MAP", key);
-            }
-        }
+    let map = VPLIC_MAP.lock();
+    for (&key, _) in map.iter() {
+        info!("Zone {}'s VPLIC is in VPLIC_MAP", key);
     }
 }
 
@@ -178,34 +173,28 @@ impl Zone {
     /// Initial the virtual PLIC related to thiz Zone.
     pub fn vplic_init(&mut self, config: &HvZoneConfig) {
         // Create a new VirtualPLIC for this Zone.
-        unsafe {
-            if let Some(map) = &mut VPLIC_MAP {
-                if map.contains_key(&self.id) {
-                    panic!("VirtualPLIC for Zone {} already exists!", self.id);
-                }
-                let vplic = vplic::VirtualPLIC::new(
-                    config.arch_config.plic_base,
-                    BOARD_PLIC_INTERRUPTS_NUM,
-                    self.cpu_num * NUM_CONTEXTS_PER_HART,
-                );
-                // Insert into Map <zone_id, vplic>
-                let _ = map.insert(self.id, vplic);
-            } else {
-                panic!("VPLIC_MAP is not initialized!");
-            }
+        let mut map = VPLIC_MAP.lock();
+        if map.contains_key(&self.id) {
+            panic!("VirtualPLIC for Zone {} already exists!", self.id);
         }
+        let vplic = vplic::VirtualPLIC::new(
+            config.arch_config.plic_base,
+            BOARD_PLIC_INTERRUPTS_NUM,
+            self.cpu_num * NUM_CONTEXTS_PER_HART,
+        );
+        // Insert into Map <zone_id, vplic>
+        map.insert(self.id, Arc::new(vplic));
         info!("VirtualPLIC for Zone {} initialized successfully", self.id);
+        drop(map); // `print_keys` also locks VPLIC_MAP
         print_keys();
     }
 
-    pub fn get_vplic(&self) -> &VirtualPLIC {
-        unsafe {
-            VPLIC_MAP
-                .as_ref()
-                .expect("VPLIC_MAP is not initialized!")
-                .get(&self.id)
-                .expect("VirtualPLIC for this Zone does not exist!")
-        }
+    pub fn get_vplic(&self) -> Arc<VirtualPLIC> {
+        VPLIC_MAP
+            .lock()
+            .get(&self.id)
+            .expect("No vplic exists for current zone.")
+            .clone()
     }
 
     pub fn arch_irqchip_reset(&self) {
@@ -246,13 +235,8 @@ impl Zone {
             crate::event::clear_events(cpuid);
         });
 
-        unsafe {
-            if let Some(map) = &mut VPLIC_MAP {
-                map.remove(&self.id);
-            } else {
-                panic!("VPLIC_MAP is not initialized!");
-            }
-        }
+        let mut map = VPLIC_MAP.lock();
+        map.remove(&self.id);
         print_keys();
     }
 

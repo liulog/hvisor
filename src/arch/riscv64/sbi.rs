@@ -22,7 +22,7 @@ use crate::consts::IPI_EVENT_SEND_IPI;
 use crate::event::{send_event, IPI_EVENT_WAKEUP};
 use crate::hypercall::HyperCall;
 use crate::percpu::{get_cpu_data, this_cpu_data};
-use core::sync::atomic::{self, Ordering};
+use core::sync::atomic;
 use riscv::register::sie;
 use riscv_h::register::hvip;
 use sbi_rt::{HartMask, SbiRet};
@@ -97,12 +97,14 @@ pub fn sbi_vs_handler(current_cpu: &mut ArchCpu) {
         // Legacy::Console putchar (usually used), temporily don't support other legacy extensions.
         legacy::LEGACY_CONSOLE_PUTCHAR => {
             sbi_ret = SbiRet {
+                #[allow(deprecated)]
                 error: sbi_rt::legacy::console_putchar(current_cpu.x[10] as _),
                 value: 0,
             };
         }
         legacy::LEGACY_CONSOLE_GETCHAR => {
             sbi_ret = SbiRet {
+                #[allow(deprecated)]
                 error: sbi_rt::legacy::console_getchar(),
                 value: 0,
             };
@@ -213,6 +215,7 @@ pub fn sbi_time_handler(fid: usize, current_cpu: &mut ArchCpu) -> SbiRet {
 
 #[allow(unused)]
 #[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum HSM_STATUS {
     STARTED,
     STOPPED,

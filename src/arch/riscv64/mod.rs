@@ -12,7 +12,14 @@
 //      https://www.syswonder.org
 //
 // Authors:
+//      Jingyu Liu <liujingyu24s@ict.ac.cn>
 //
+
+#![deny(unused_variables)]
+#![deny(unused_imports)]
+#![deny(unused_mut)]
+#![deny(unused)]
+
 pub mod consts;
 pub mod cpu;
 pub mod csr;
@@ -29,6 +36,6 @@ pub mod time;
 pub mod trap;
 pub mod zone;
 
-pub use s1pt::Stage1PageTable;
+// pub use s1pt::Stage1PageTable;
 pub use s2pt::stage2_mode_detect;
 pub use s2pt::Stage2PageTable;

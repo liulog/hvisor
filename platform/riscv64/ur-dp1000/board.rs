@@ -55,49 +55,24 @@ pub const ROOT_ZONE_KERNEL_ADDR: u64 = 0x90000000;
 pub const ROOT_ZONE_ENTRY: u64 = 0x90000000;
 pub const ROOT_ZONE_CPUS: u64 = 0x1; // 8 harts
 
+#[rustfmt::skip]
 pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_RAM,
-        physical_start: 0x8000_0000,
-        virtual_start: 0x8000_0000,
-        size: 0x8_0000_0000, // 32GB
-    }, // ram
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x2030_0000,
-        virtual_start: 0x2030_0000,
-        size: 0x1_0000,
-    }, // serial0
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x2300_0000,
-        virtual_start: 0x2300_0000,
-        size: 0x100_0000,
-    }, // pcie_x4a IP register
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x6fff_0000,
-        virtual_start: 0x6fff_0000,
-        size: 0x1_0000,
-    }, // pcie_x4a Configuration Space
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x6fbf_0000,
-        virtual_start: 0x6fbf_0000,
-        size: 0x40_0000,
-    }, // pcie_x4a IO Space
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x6000_0000,
-        virtual_start: 0x6000_0000,
-        size: 0xfbf_0000,
-    }, // pcie_x4a Mem32 Space
-    HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_IO,
-        physical_start: 0x80_0000_0000,
-        virtual_start: 0x80_0000_0000,
-        size: 0xd_0000_0000,
-    }, // pcie_x4a Mem64 Space
+    // Main memory (~32GB), reserved 0x500_0000 (80M) for high-level privilege softwares (opensbi & hvisor).
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_RAM, physical_start: 0x8500_0000, virtual_start: 0x8500_0000, size: 0x8_0000_0000 - 0x500_0000 },
+    // Serial0
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2030_0000, virtual_start: 0x2030_0000, size: 0x1_0000 },
+    // Pcie_x16
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2300_0000, virtual_start: 0x2300_0000, size: 0x100_0000 }, // IP_register
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fff_0000, virtual_start: 0x6fff_0000, size: 0x1_0000 }, // Configuration Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fbf_0000, virtual_start: 0x6fbf_0000, size: 0x40_0000 }, // IO Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6000_0000, virtual_start: 0x6000_0000, size: 0xfbf_0000 }, // Mem32 Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x80_0000_0000, virtual_start: 0x80_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
+    // Pcie_x4a 
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2300_0000, virtual_start: 0x2300_0000, size: 0x100_0000 }, // IP register
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fff_0000, virtual_start: 0x6fff_0000, size: 0x1_0000 }, // Configuration Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fbf_0000, virtual_start: 0x6fbf_0000, size: 0x40_0000 }, // IO Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6000_0000, virtual_start: 0x6000_0000, size: 0xfbf_0000 }, // Mem32 Space
+    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x80_0000_0000, virtual_start: 0x80_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
 ];
 
 // Note: all here's irqs are hardware irqs,
