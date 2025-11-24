@@ -177,9 +177,7 @@ impl Plic {
     /// Plic get threshold
     pub fn get_threshold(&self, context: usize) -> u32 {
         let addr = self.base + PLIC_THRESHOLD_OFFSET + context * 0x1000;
-        unsafe {
-            core::ptr::read_volatile(addr as *const u32)
-        }
+        unsafe { core::ptr::read_volatile(addr as *const u32) }
     }
 
     /// Plic claim
