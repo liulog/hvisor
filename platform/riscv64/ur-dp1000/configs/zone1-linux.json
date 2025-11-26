@@ -2,13 +2,13 @@
     "arch": "riscv",
     "name": "linux2",
     "zone_id": 1,
-    "cpus": [1],
+    "cpus": [4,5,6,7],
     "memory_regions": [
         {
             "type": "ram",
-            "physical_start": "0x100000000",
-            "virtual_start":  "0x100000000",
-            "size": "0x780000000"
+            "physical_start": "0x480000000",
+            "virtual_start":  "0x480000000",
+            "size": "0x400000000"
         },
         {
             "type": "virtio",
@@ -27,9 +27,9 @@
     "ivc_configs": [],
     "kernel_filepath": "./Image",
     "dtb_filepath": "./zone1-linux.dtb",
-    "kernel_load_paddr": "0x100000000",
-    "dtb_load_paddr":   "0x110000000",
-    "entry_point":      "0x100000000",
+    "kernel_load_paddr": "0x480000000",
+    "dtb_load_paddr":   "0x490000000",
+    "entry_point":      "0x480000000",
     "arch_config": {
         "plic_base": "0x9000000",
         "plic_size": "0x4000000",

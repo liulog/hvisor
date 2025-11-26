@@ -161,11 +161,19 @@ pub fn update_hart_line() {
 }
 
 /// Print all keys in the VPLIC_MAP for debugging purposes.
+/// This function acquires the lock internally and is safe to call from outside.
+#[allow(unused)]
 fn print_keys() {
-    info!("VPLIC_MAP keys:");
     let map = VPLIC_MAP.lock();
+    print_keys_from_map(&map);
+}
+
+/// Helper: print keys from an already-locked map reference.
+/// Useful to avoid nested locking when called from within a locked scope.
+fn print_keys_from_map(map: &BTreeMap<usize, Arc<VirtualPLIC>>) {
+    info!("VPLIC_MAP keys:");
     for (&key, _) in map.iter() {
-        info!("Zone {}'s VPLIC is in VPLIC_MAP", key);
+        info!("    Zone {}'s VPLIC is in VPLIC_MAP", key);
     }
 }
 
@@ -185,8 +193,7 @@ impl Zone {
         // Insert into Map <zone_id, vplic>
         map.insert(self.id, Arc::new(vplic));
         info!("VirtualPLIC for Zone {} initialized successfully", self.id);
-        drop(map); // `print_keys` also locks VPLIC_MAP
-        print_keys();
+        print_keys_from_map(&map);
     }
 
     pub fn get_vplic(&self) -> Arc<VirtualPLIC> {
@@ -237,7 +244,7 @@ impl Zone {
 
         let mut map = VPLIC_MAP.lock();
         map.remove(&self.id);
-        print_keys();
+        print_keys_from_map(&map);
     }
 
     fn insert_irq_to_bitmap(&mut self, irq: u32) {
