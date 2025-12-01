@@ -19,7 +19,11 @@ use crate::{
         zone::{GicConfig, Gicv3Config, HvArchZoneConfig},
     },
     config::*,
+    pci::vpci_dev::VpciDevType,
 };
+
+use crate::pci_dev;
+
 pub const BOARD_NAME: &str = "qemu-gicv3";
 
 pub const BOARD_NCPUS: usize = 4;
@@ -88,7 +92,7 @@ pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
     }),
 };
 
-pub const ROOT_PCI_CONFIG: HvPciConfig = HvPciConfig {
+pub const ROOT_PCI_CONFIG: [HvPciConfig; 1] = [HvPciConfig {
     ecam_base: 0x4010000000,
     ecam_size: 0x10000000,
     io_base: 0x3eff0000,
@@ -100,8 +104,15 @@ pub const ROOT_PCI_CONFIG: HvPciConfig = HvPciConfig {
     mem64_base: 0x8000000000,
     mem64_size: 0x8000000000,
     pci_mem64_base: 0x8000000000,
-};
+    bus_range_begin: 0,
+    bus_range_end: 0xff,
+}];
 
 pub const ROOT_ZONE_IVC_CONFIG: [HvIvcConfig; 0] = [];
 
-pub const ROOT_PCI_DEVS: [u64; 2] = [0, 1 << 3];
+pub const ROOT_PCI_DEVS: &[HvPciDevConfig] = &[
+    pci_dev!(0x0, 0x0, 0x0, VpciDevType::Physical),
+    pci_dev!(0x0, 0x1, 0x0, VpciDevType::Physical),
+    pci_dev!(0x0, 0x2, 0x0, VpciDevType::Physical),
+    pci_dev!(0x0, 0x5, 0x0, VpciDevType::StandardVdev),
+];

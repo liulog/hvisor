@@ -15,6 +15,9 @@
 //  ForeverYolo <2572131118@qq.com>
 
 // PCI constants
+#[allow(unused)]
 pub const HV_ADDR_PREFIX: u64 = 0;
+#[allow(unused)]
 pub const LOONG_HT_PREFIX: u64 = 0;
+#[allow(unused)]
 pub const BDF_SHIFT: usize = 12;

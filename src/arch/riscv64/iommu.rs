@@ -14,6 +14,7 @@
 // Authors:
 //      ForeverYolo <2572131118@qq.com>
 
+#[allow(unused)]
 pub fn iommu_init() {
     info!("riscv: iommu_init: do nothing now");
 }
