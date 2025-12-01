@@ -62,26 +62,26 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
     HvConfigMemoryRegion { mem_type: MEM_TYPE_RAM, physical_start: 0x8500_0000, virtual_start: 0x8500_0000, size: 0x8_0000_0000 - 0x500_0000 },
     // Serial0
     HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2030_0000, virtual_start: 0x2030_0000, size: 0x1_0000 },
-    // Pcie_x16
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2100_0000, virtual_start: 0x2100_0000, size: 0x100_0000 }, // IP_register
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4fff_0000, virtual_start: 0x4fff_0000, size: 0x1_0000 }, // Configuration Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4fbf_0000, virtual_start: 0x4fbf_0000, size: 0x40_0000 }, // IO Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4000_0000, virtual_start: 0x4000_0000, size: 0xfbf_0000 }, // Mem32 Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x40_0000_0000, virtual_start: 0x40_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
-    // Pcie_x4a 
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2300_0000, virtual_start: 0x2300_0000, size: 0x100_0000 }, // IP register
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fff_0000, virtual_start: 0x6fff_0000, size: 0x1_0000 }, // Configuration Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fbf_0000, virtual_start: 0x6fbf_0000, size: 0x40_0000 }, // IO Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6000_0000, virtual_start: 0x6000_0000, size: 0xfbf_0000 }, // Mem32 Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x80_0000_0000, virtual_start: 0x80_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
-    // Pcie_x4b
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2400_0000, virtual_start: 0x2400_0000, size: 0x100_0000 }, // IP register
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7fff_0000, virtual_start: 0x7fff_0000, size: 0x1_0000 }, // Configuration Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7fbf_0000, virtual_start: 0x7fbf_0000, size: 0x40_0000 }, // IO Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7000_0000, virtual_start: 0x7000_0000, size: 0xfbf_0000 }, // Mem32 Space
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0xc0_0000_0000, virtual_start: 0xc0_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
-    // Eth
-    HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x3800_0000, virtual_start: 0x3800_0000, size: 0x100_0000 },
+    // // Pcie_x16
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2100_0000, virtual_start: 0x2100_0000, size: 0x100_0000 }, // IP_register
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4fff_0000, virtual_start: 0x4fff_0000, size: 0x1_0000 }, // Configuration Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4fbf_0000, virtual_start: 0x4fbf_0000, size: 0x40_0000 }, // IO Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x4000_0000, virtual_start: 0x4000_0000, size: 0xfbf_0000 }, // Mem32 Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x40_0000_0000, virtual_start: 0x40_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
+    // // Pcie_x4a 
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2300_0000, virtual_start: 0x2300_0000, size: 0x100_0000 }, // IP register
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fff_0000, virtual_start: 0x6fff_0000, size: 0x1_0000 }, // Configuration Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6fbf_0000, virtual_start: 0x6fbf_0000, size: 0x40_0000 }, // IO Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x6000_0000, virtual_start: 0x6000_0000, size: 0xfbf_0000 }, // Mem32 Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x80_0000_0000, virtual_start: 0x80_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
+    // // Pcie_x4b
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x2400_0000, virtual_start: 0x2400_0000, size: 0x100_0000 }, // IP register
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7fff_0000, virtual_start: 0x7fff_0000, size: 0x1_0000 }, // Configuration Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7fbf_0000, virtual_start: 0x7fbf_0000, size: 0x40_0000 }, // IO Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x7000_0000, virtual_start: 0x7000_0000, size: 0xfbf_0000 }, // Mem32 Space
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0xc0_0000_0000, virtual_start: 0xc0_0000_0000, size: 0xd_0000_0000 }, // Mem64 Space
+    // // Eth
+    // HvConfigMemoryRegion { mem_type: MEM_TYPE_IO, physical_start: 0x3800_0000, virtual_start: 0x3800_0000, size: 0x100_0000 },
 ];
 // No mapped io regions in root zone.
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
@@ -113,8 +113,8 @@ pub const HW_IRQS: &[u32] = &[
 #[rustfmt::skip]
 pub const ROOT_ZONE_IRQS: &[u32] = &[
     17, // uart0,
-    84, // ethernet1@38000000
-    43, 44, 45, 46, 47, 48, // pcie_x16@21000000, msi, inta, intb, intc, intd, aer
-    63, 64, 65, 66, 67, 68, // pcie_x4a@23000000, msi, inta, intb, intc, intd, aer
-    73, 74, 75, 76, 77, 78, // pcie_x4b@24000000, msi, inta, intb, intc, intd, aer
+    // 84, // ethernet1@38000000
+    // 43, 44, 45, 46, 47, 48, // pcie_x16@21000000, msi, inta, intb, intc, intd, aer
+    // 63, 64, 65, 66, 67, 68, // pcie_x4a@23000000, msi, inta, intb, intc, intd, aer
+    // 73, 74, 75, 76, 77, 78, // pcie_x4b@24000000, msi, inta, intb, intc, intd, aer
 ];

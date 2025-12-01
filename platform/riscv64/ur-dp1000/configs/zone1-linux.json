@@ -6,24 +6,84 @@
     "memory_regions": [
         {
             "type": "ram",
+            "physical_start": "0xC0000000",
+            "virtual_start":  "0xC0000000",
+            "size": "0x40000000"
+        },
+        {
+            "type": "ram",
             "physical_start": "0x480000000",
             "virtual_start":  "0x480000000",
             "size": "0x400000000"
         },
         {
             "type": "virtio",
-            "physical_start": "0x10006000",
-            "virtual_start":  "0x10006000",
-            "size": "0x1000"
-        },
-        {
-            "type": "virtio",
             "physical_start": "0x10007000",
             "virtual_start":  "0x10007000",
             "size": "0x1000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x21000000",
+            "virtual_start":  "0x21000000",
+            "size": "0x1000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x40000000",
+            "virtual_start":  "0x40000000",
+            "size": "0x10000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x4000000000",
+            "virtual_start":  "0x4000000000",
+            "size": "0xd00000000"
+        },
+                {
+            "type": "io",
+            "physical_start": "0x23000000",
+            "virtual_start":  "0x23000000",
+            "size": "0x1000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x60000000",
+            "virtual_start":  "0x60000000",
+            "size": "0x10000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x8000000000",
+            "virtual_start":  "0x8000000000",
+            "size": "0xd00000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x24000000",
+            "virtual_start":  "0x24000000",
+            "size": "0x1000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x70000000",
+            "virtual_start":  "0x70000000",
+            "size": "0x10000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0xc000000000",
+            "virtual_start":  "0xc000000000",
+            "size": "0xd00000000"
+        },
+        {
+            "type": "io",
+            "physical_start": "0x38000000",
+            "virtual_start":  "0x38000000",
+            "size": "0x1000000"
         }
     ],
-    "interrupts": [6, 7],
+    "interrupts": [7, 84, 43, 44, 45, 46, 47, 48, 63, 64, 65, 66, 67, 68, 73, 74, 75, 76, 77, 78],
     "ivc_configs": [],
     "kernel_filepath": "./Image",
     "dtb_filepath": "./zone1-linux.dtb",
