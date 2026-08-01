@@ -1,0 +1,36 @@
+/dts-v1/;
+
+/ {
+	description = "Linux test FIT (Image + test.dtb)";
+	#address-cells = <2>;
+
+	images {
+		kernel {
+			description = "Linux kernel Image";
+			data = /incbin/("__LINUX_IMAGE__");
+			type = "kernel";
+			arch = "riscv";
+			os = "linux";
+			compression = "none";
+			load = <0x1 0x10000000>;
+			entry = <0x1 0x10000000>;
+		};
+
+		fdt {
+			description = "Linux device tree (test.dts)";
+			data = /incbin/("__LINUX_DTB__");
+			type = "flat_dt";
+			compression = "none";
+			load = <0x1 0x0f000000>;
+		};
+	};
+
+	configurations {
+		default = "config_1";
+		config_1 {
+			description = "Boot Linux Image with test.dtb";
+			kernel = "kernel";
+			fdt = "fdt";
+		};
+	};
+};

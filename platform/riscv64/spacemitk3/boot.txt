@@ -1,0 +1,55 @@
+setenv serverip 192.168.137.1;
+setenv ipaddr 192.168.137.200;
+setenv netmask 255.255.255.0;
+
+setenv hvisor_fit_addr 0x122200000;
+tftpboot ${hvisor_fit_addr} ${serverip}:hvisor.bin;
+
+setenv zone0_fdt_addr 0x10f000000;
+tftpboot ${zone0_fdt_addr} ${serverip}:zone0.dtb;
+
+setenv zone0_kernel_addr 0x110000000;
+tftpboot ${zone0_kernel_addr} ${serverip}:Image;
+
+bootm ${hvisor_fit_addr} - ${zone0_fdt_addr};
+
+setenv zone0_fdt_addr 0x10f000000;
+tftpboot ${zone0_fdt_addr} ${serverip}:test.dtb;
+
+setenv zone0_kernel_addr 0x110000000;
+tftpboot ${zone0_kernel_addr} ${serverip}:Image;
+
+bootm ${zone0_kernel_addr} - ${zone0_fdt_addr};
+
+setenv serverip 192.168.137.100;
+setenv ipaddr 192.168.137.200;
+setenv netmask 255.255.255.0;
+setenv linux_fit_addr 0x120000000
+tftpboot ${linux_fit_addr} ${serverip}:linux-test.bin
+bootm ${linux_fit_addr}
+
+
+# 1. 设置 ip 地址
+setenv serverip 192.168.137.1;
+setenv ipaddr 192.168.137.200;
+setenv netmask 255.255.255.0;
+
+# 2. 从 TFTP 下载三个文件（注意：地址均已升级为 64 位）
+tftpboot 0x102200000 Image
+tftpboot 0x105000000 minimal.dtb
+tftpboot 0x106000000 initrd.cpio
+
+# 3. 设置内核启动参数
+setenv bootargs "root=/dev/sda3 rw console=ttyS0,115200 earlycon"
+
+# 4. 点火启动 (${filesize} 会自动获取刚下载完的 initrd 大小)
+booti 0x102200000 0x106000000:${filesize} 0x105000000
+
+
+setenv serverip 192.168.137.1;
+setenv ipaddr 192.168.137.200;
+setenv netmask 255.255.255.0;
+setenv bootargs "riscv_gate_test=1 riscv_gate_bench=1"
+tftpboot 0x107200000 Image_sw_mmu_stvec
+tftpboot 0x10A000000 minimal.dtb
+booti 0x107200000 - 0x10A000000
