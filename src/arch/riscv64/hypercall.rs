@@ -14,13 +14,16 @@
 // Authors:
 //  ForeverYolo <2572131118@qq.com>
 
-use crate::arch::cpu::this_cpu_id;
 use crate::config::CONFIG_MAGIC_VERSION;
 use crate::device::virtio_trampoline::MAX_DEVS;
 use crate::hypercall::HyperCall;
 use crate::hypercall::HyperCallResult;
 
 impl<'a> HyperCall<'a> {
+    pub fn hv_get_ecam_base(&mut self, _ecam_base: *mut u64) -> HyperCallResult {
+        HyperCallResult::Ok(0)
+    }
+
     pub fn hv_ivc_info(&mut self, _ivc_info_ipa: u64) -> HyperCallResult {
         warn!("hv_ivc_info is not implemented for Risc-V");
         HyperCallResult::Ok(0)
@@ -50,11 +53,6 @@ impl<'a> HyperCall<'a> {
     pub fn hv_get_real_list_pa(&mut self, list_addr: u64) -> u64 {
         // RISC-V does not have a specific prefix for cached memory, so we return the address as is.
         return list_addr;
-    }
-
-    pub fn check_cpu_id(&self) {
-        let cpuid = this_cpu_id();
-        trace!("CPU ID: {} Start Zone", cpuid);
     }
 
     pub fn hv_virtio_get_irq(&self, _virtio_irq: *mut u32) -> HyperCallResult {

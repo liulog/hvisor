@@ -60,42 +60,81 @@ pub const ROOT_ZONE_CPUS: u64 = (1 << 0) | (1 << 1);
 
 pub const ROOT_ZONE_NAME: &str = "root-linux";
 pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
-    // HvConfigMemoryRegion {
-    //     mem_type: MEM_TYPE_IO,
-    //     physical_start: 0x3c0400000,
-    //     virtual_start: 0x3c0400000,
-    //     size: 0x400000,
-    // }, //pcie
-    // HvConfigMemoryRegion {
-    //     mem_type: MEM_TYPE_IO,
-    //     physical_start: 0xfe270000,
-    //     virtual_start: 0xfe270000,
-    //     size: 0x10000,
-    // }, //pcie
+    // pcie@fe260000 (domain 0)
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf4000000,
+        virtual_start: 0xf4000000,
+        size: 0x100000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf4100000,
+        virtual_start: 0xf4100000,
+        size: 0x100000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf4200000,
+        virtual_start: 0xf4200000,
+        size: 0x1e00000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x300000000,
+        virtual_start: 0x300000000,
+        size: 0x40000000,
+    },
+    // pcie@fe270000 (domain 1)
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0xf2000000,
         virtual_start: 0xf2000000,
         size: 0x100000,
-    }, //pcie
+    },
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0xf2100000,
         virtual_start: 0xf2100000,
         size: 0x100000,
-    }, //pcie
+    },
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0xf2200000,
         virtual_start: 0xf2200000,
         size: 0x1e00000,
-    }, //pcie
+    },
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0x340000000,
         virtual_start: 0x340000000,
         size: 0x40000000,
-    }, //pcie
+    },
+    // pcie@fe280000 (domain 2)
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf0000000,
+        virtual_start: 0xf0000000,
+        size: 0x100000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf0100000,
+        virtual_start: 0xf0100000,
+        size: 0x100000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xf0200000,
+        virtual_start: 0xf0200000,
+        size: 0x1e00000,
+    },
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0x380000000,
+        virtual_start: 0x380000000,
+        size: 0x40000000,
+    },
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_IO,
         physical_start: 0xfdcb8000,
@@ -169,11 +208,11 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
     //     size: 0x1000,
     // }, //scmi-shmem
     HvConfigMemoryRegion {
-        mem_type: MEM_TYPE_RAM,
+        mem_type: MEM_TYPE_IO,
         physical_start: 0xfd440000,
         virtual_start: 0xfd440000,
         size: 0x20000,
-    }, // its
+    }, // its passthrough
     HvConfigMemoryRegion {
         mem_type: MEM_TYPE_RAM,
         physical_start: 0x1f0000000,
@@ -276,12 +315,24 @@ pub const ROOT_ZONE_MEMORY_REGIONS: &[HvConfigMemoryRegion] = &[
         virtual_start: 0xFE310000,
         size: 0x10000,
     }, //sdhci
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xfe010000,
+        virtual_start: 0xfe010000,
+        size: 0x10000,
+    }, // gmac1 ethernet@fe010000
+    HvConfigMemoryRegion {
+        mem_type: MEM_TYPE_IO,
+        physical_start: 0xfda00000,
+        virtual_start: 0xfda00000,
+        size: 0x200000,
+    }, // xpcs syscon for gmac RGMII
 ];
 
-pub const IRQ_WAKEUP_VIRTIO_DEVICE: usize = 32 + 0x20;
+pub const IRQ_WAKEUP_VIRTIO_DEVICE: usize = 32 + 0x26;
 pub const ROOT_ZONE_IRQS_BITMAP: &[BitmapWord] = &get_irqs_bitmap(&[
-    0x84, 0x98, 0x40, 0x104, 0x105, 0x106, 0x107, 0x2d, 0x2e, 0x2b, 0x2a, 0x29, 0x33, 0x96, 0x11c,
-    0x44, 0x43, 0x42, 0x41, 0x8d,
+    0x84, 0x98, 0x46, 0x20, 0x1d, 0x104, 0x105, 0x106, 0x107, 0x108, 0x2d, 0x2e, 0x2b, 0x2a, 0x29,
+    0x33, 0x96, 0x11c, 0x44, 0x43, 0x42, 0x41, 0x8d, 0x48, 0x49, 0x9d, 0x9e, 0xa2, 0xa3,
 ]);
 
 pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
@@ -291,28 +342,28 @@ pub const ROOT_ARCH_ZONE_CONFIG: HvArchZoneConfig = HvArchZoneConfig {
         gicd_size: 0x10000,
         gicr_base: 0xfd460000,
         gicr_size: 0xc0000,
-        gits_base: 0xfd440000,
-        gits_size: 0x20000,
+        gits_base: 0,
+        gits_size: 0,
     }),
     uefi_config: UefiConfig::NoUefi
 };
 pub const ROOT_PCI_CONFIG: &[HvPciConfig] = &[
-    // HvPciConfig {
-    //     ecam_base: 0xfe260000,
-    //     ecam_size: 0x400000,
-    //     io_base: 0xf4100000,
-    //     io_size: 0x100000,
-    //     pci_io_base: 0xf4100000,
-    //     mem32_base: 0xf4200000,
-    //     mem32_size: 0x1e00000,
-    //     pci_mem32_base: 0xf4200000,
-    //     mem64_base: 0x300000000,
-    //     mem64_size: 0x40000000,
-    //     pci_mem64_base: 0x300000000,
-    //     bus_range_begin: 0x0,
-    //     bus_range_end: 0x10,
-    //     domain: 0x0,
-    // },
+    HvPciConfig {
+        ecam_base: 0x3c0000000,
+        ecam_size: 0x400000,
+        io_base: 0xf4100000,
+        io_size: 0x100000,
+        pci_io_base: 0xf4100000,
+        mem32_base: 0xf4200000,
+        mem32_size: 0x1e00000,
+        pci_mem32_base: 0xf4200000,
+        mem64_base: 0x300000000,
+        mem64_size: 0x40000000,
+        pci_mem64_base: 0x300000000,
+        bus_range_begin: 0x0,
+        bus_range_end: 0x10,
+        domain: 0x0,
+    },
     HvPciConfig {
         ecam_base: 0x3c0400000,
         ecam_size: 0x400000,
@@ -329,40 +380,68 @@ pub const ROOT_PCI_CONFIG: &[HvPciConfig] = &[
         bus_range_end: 0x1f,
         domain: 0x1,
     },
-    // HvPciConfig {
-    //     ecam_base: 0xfe280000,
-    //     ecam_size: 0x400000,
-    //     io_base: 0xf0100000,
-    //     io_size: 0x100000,
-    //     pci_io_base: 0xf0100000,
-    //     mem32_base: 0xf0200000,
-    //     mem32_size: 0x1e00000,
-    //     pci_mem32_base: 0xf0200000,
-    //     mem64_base: 0x380000000,
-    //     mem64_size: 0x40000000,
-    //     pci_mem64_base: 0x380000000,
-    //     bus_range_begin: 0x20,
-    //     bus_range_end: 0x2f,
-    //     domain: 0x2,
-    // }
+    HvPciConfig {
+        ecam_base: 0x3c0800000,
+        ecam_size: 0x400000,
+        io_base: 0xf0100000,
+        io_size: 0x100000,
+        pci_io_base: 0xf0100000,
+        mem32_base: 0xf0200000,
+        mem32_size: 0x1e00000,
+        pci_mem32_base: 0xf0200000,
+        mem64_base: 0x380000000,
+        mem64_size: 0x40000000,
+        pci_mem64_base: 0x380000000,
+        bus_range_begin: 0x20,
+        bus_range_end: 0x2f,
+        domain: 0x2,
+    },
 ];
 
 pub const ROOT_ZONE_IVC_CONFIG: [HvIvcConfig; 0] = [];
 
-pub const ROOT_DWC_ATU_CONFIG: &[HvDwcAtuConfig] = &[HvDwcAtuConfig {
-    ecam_base: 0x3c0400000,
-    dbi_base: 0x3c0400000,
-    dbi_size: 0x10000,
-    apb_base: 0xfe270000,
-    apb_size: 0x10000,
-    cfg_base: 0xf2000000,
-    cfg_size: 0x80000 * 2,
-    io_cfg_atu_shared: 0,
-    io_atu_index: 0,
-    dw_msi_irq: 0,
-}];
+pub const ROOT_DWC_ATU_CONFIG: &[HvDwcAtuConfig] = &[
+    HvDwcAtuConfig {
+        ecam_base: 0x3c0000000,
+        dbi_base: 0x3c0000000,
+        dbi_size: 0x10000,
+        apb_base: 0xfe260000,
+        apb_size: 0x10000,
+        cfg_base: 0xf4000000,
+        cfg_size: 0x80000 * 2,
+        io_cfg_atu_shared: 0,
+        io_atu_index: 0,
+        dw_msi_irq: 0x49, // pcie@fe260000 msg irq
+    },
+    HvDwcAtuConfig {
+        ecam_base: 0x3c0400000,
+        dbi_base: 0x3c0400000,
+        dbi_size: 0x10000,
+        apb_base: 0xfe270000,
+        apb_size: 0x10000,
+        cfg_base: 0xf2000000,
+        cfg_size: 0x80000 * 2,
+        io_cfg_atu_shared: 0,
+        io_atu_index: 0,
+        dw_msi_irq: 0x9e, // pcie@fe270000 msg irq
+    },
+    HvDwcAtuConfig {
+        ecam_base: 0x3c0800000,
+        dbi_base: 0x3c0800000,
+        dbi_size: 0x10000,
+        apb_base: 0xfe280000,
+        apb_size: 0x10000,
+        cfg_base: 0xf0000000,
+        cfg_size: 0x80000 * 2,
+        io_cfg_atu_shared: 0,
+        io_atu_index: 0,
+        dw_msi_irq: 0xa3, // pcie@fe280000 msg irq
+    },
+];
 
-pub const ROOT_PCI_DEVS: [HvPciDevConfig; 2] = [
-    pci_dev!(0x0, 0x00, 0x0, 0x0 => 0x00, 0x0, 0x0, VpciDevType::Physical),
-    pci_dev!(0x0, 0x01, 0x0, 0x0 => 0x01, 0x0, 0x0, VpciDevType::Physical),
+pub const ROOT_PCI_DEVS: [HvPciDevConfig; 4] = [
+    pci_dev!(0x1, 0x10, 0x0, 0x0 => 0x10, 0x0, 0x0, VpciDevType::Physical),
+    pci_dev!(0x1, 0x11, 0x0, 0x0 => 0x11, 0x0, 0x0, VpciDevType::Physical),
+    pci_dev!(0x2, 0x20, 0x0, 0x0 => 0x20, 0x0, 0x0, VpciDevType::Physical),
+    pci_dev!(0x2, 0x21, 0x0, 0x0 => 0x21, 0x0, 0x0, VpciDevType::Physical),
 ];

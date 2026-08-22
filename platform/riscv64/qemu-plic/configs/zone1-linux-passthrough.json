@@ -54,7 +54,7 @@
     }],
     "num_pci_devs": 2,
     "alloc_pci_devs": [
-          {
+        {
             "domain": "0x0",
             "bus": "0x0",
             "device": "0x0",

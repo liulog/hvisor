@@ -19,11 +19,11 @@ use super::register::*;
 use super::zone::ZoneContext;
 use crate::arch::cpu::this_cpu_id;
 use crate::arch::ipi::*;
-use crate::consts::{IPI_EVENT_CLEAR_INJECT_IRQ, MAX_CPU_NUM};
+use crate::consts::MAX_CPU_NUM;
 use crate::cpu_data::this_cpu_data;
 use crate::device::irqchip::inject_irq;
 use crate::device::irqchip::ls7a2000::chip::*;
-use crate::event::{check_events, dump_cpu_events, dump_events};
+use crate::event::{dump_events, handle_next_event};
 use crate::hypercall::{SGI_IPI_ID, *};
 use crate::memory::{addr, mmio_handle_access, MMIOAccess};
 use crate::zone::Zone;
@@ -100,8 +100,6 @@ pub fn install_trap_vector() {
     euen::set_fpe(true); // basic floating point
     euen::set_sxe(true); // 128-bit SIMD
     euen::set_asxe(true); // 256-bit SIMD
-
-    enable_global_interrupt()
 }
 
 /// enable CRMD.IE
@@ -599,7 +597,7 @@ fn signed_ext(value: usize, size: usize) -> usize {
 }
 
 #[no_mangle]
-pub fn _vcpu_return(ctx: usize) {
+pub fn _vcpu_return(ctx: usize) -> ! {
     let z = this_cpu_data().zone.as_ref();
     let vm_id;
     if z.is_none() {
@@ -916,7 +914,8 @@ extern "C" fn _hyp_trap_vector() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn _hyp_trap_return(ctx: usize) {
+#[inline(never)]
+pub unsafe extern "C" fn _hyp_trap_return(ctx: usize) -> ! {
     unsafe {
         asm!(
             // a0 -> sp
@@ -1045,6 +1044,7 @@ pub unsafe extern "C" fn _hyp_trap_return(ctx: usize) {
             "gcsrwr $r12, {LOONGARCH_GCSR_DMW2}",
             "ld.d $r12, $r3, 256+8*60",
             "gcsrwr $r12, {LOONGARCH_GCSR_DMW3}",
+            in("$r4") ctx,
             LOONGARCH_CSR_ERA = const 0x6,
             LOONGARCH_GCSR_CRMD = const 0x0,
             LOONGARCH_GCSR_PRMD = const 0x1,
@@ -1130,6 +1130,9 @@ pub unsafe extern "C" fn _hyp_trap_return(ctx: usize) {
         //   LOONGARCH_CSR_PGDH = const 0x1a,
         // );
         asm!(
+            // Re-establish the context base instead of relying on $r3 to remain
+            // unchanged across two independent asm blocks.
+            "move $r3, $r4",
             // restore sp
             "ld.d $r12, $r3, 24",
             "csrwr $r12, {LOONGARCH_CSR_DESAVE}",
@@ -1168,7 +1171,9 @@ pub unsafe extern "C" fn _hyp_trap_return(ctx: usize) {
             "ld.d $r31, $r3, 248",
             "csrwr $r3, {LOONGARCH_CSR_DESAVE}",
             "ertn",
-            LOONGARCH_CSR_DESAVE = const 0x502
+            in("$r4") ctx,
+            LOONGARCH_CSR_DESAVE = const 0x502,
+            options(noreturn)
         );
     }
 }
@@ -1269,34 +1274,37 @@ fn handle_interrupt(is: usize) {
     // Handle IPI interrupts
     if is & IPI_BIT != 0 {
         let cpu_id = this_cpu_id();
-        let ipi_status = get_ipi_status(cpu_id);
+        let ipi_status = get_ipi_status();
         debug!(
             "CPU {} received IPI interrupt, status = {:#x}",
             cpu_id, ipi_status
         );
 
-        match ipi_status {
-            status if status == SGI_IPI_ID as _ => {
-                let events = dump_cpu_events(cpu_id);
-                debug!("CPU {} events: {:?}", cpu_id, events);
-                while check_events() {}
-            }
-            status if status == 0x8 => {
-                debug!("CPU {} received unhandled IPI status {:#x}", cpu_id, status);
-            }
-            status => {
-                warn!("CPU {} received unknown IPI status {:#x}", cpu_id, status);
+        let hvisor_mask = SGI_IPI_ID as u32;
+        if ipi_status & hvisor_mask != 0 {
+            // Clear before each fetch. If the fetch observes an empty queue while a
+            // producer enqueues concurrently, its doorbell remains pending and
+            // re-fires. Clearing after the fetch could lose that coalesced wakeup.
+            clear_ipi_bits(hvisor_mask);
+            while handle_next_event() {
+                clear_ipi_bits(hvisor_mask);
             }
         }
-        reset_ipi(cpu_id);
+
+        let unhandled = ipi_status & !hvisor_mask;
+        if unhandled != 0 {
+            error!(
+                "CPU {} has unhandled physical IPI status {:#x}; preserving those bits",
+                cpu_id, unhandled
+            );
+        }
         return;
     }
 
     // Handle timer interrupts
     if is & TIMER_BIT != 0 {
-        warn!("Timer interrupt received");
+        debug!("Timer interrupt received");
         loongArch64::register::ticlr::clear_timer_interrupt();
-        crate::device::irqchip::ls7a2000::clear_hwi_injected_irq();
         return;
     }
 
@@ -1352,7 +1360,7 @@ fn emulate_cpucfg(ins: usize, ctx: &mut ZoneContext) {
 
     const MAX_CPUCFG_REGS: usize = 21;
 
-    info!(
+    debug!(
         "cpucfg emulation, target cpucfg index is {:#x}",
         cpucfg_target_idx
     );
@@ -1389,19 +1397,19 @@ fn emulate_csrx(ins: usize, ctx: &mut ZoneContext) {
     match ty {
         0 => {
             // csrrd
-            info!("csrrd emulation for CSR {:#x}", csr);
+            debug!("csrrd emulation for CSR {:#x}", csr);
             ctx.x[rd] = 0;
             // just set it to 0
         }
         1 => {
             // csrwr
-            info!("csrwr emulation for CSR {:#x}", csr);
+            debug!("csrwr emulation for CSR {:#x}", csr);
             ctx.x[rd] = 0;
             // do nothing to GCSR, but we also need to set rd to 0
         }
         _ => {
             // csrxchg
-            info!("csrxchg emulation for CSR {:#x}", csr);
+            debug!("csrxchg emulation for CSR {:#x}", csr);
             ctx.x[rd] = 0;
             // do nothing to GCSR, but we also need to set rd to 0
         }

@@ -7,6 +7,11 @@ def parseBid(String bid) {
     return [arch: parts[0], board: parts[1]]
 }
 
+/** Optional platform_board in ci.yaml maps BID board to make/platform board. */
+def platformBoard(String bid, String configuredBoard = '') {
+    return configuredBoard ?: parseBid(bid).board
+}
+
 def parseCiBuildArgs(cfg) {
     def buildArgs = [:]
     if (!cfg?.build_args) {
@@ -173,7 +178,7 @@ def kconfigSetupShell(String arch, String board) {
             mkdir -p tools/kconfig
             ln -sfn ${env.KCONFIG_VENV} tools/kconfig/.venv
         fi
-        make defconfig ARCH=${arch} BOARD=${board}
+        make defconfig ARCH=${arch} BOARD=${board} BID=
     """
 }
 
@@ -205,6 +210,8 @@ pipeline {
         LOONGARCH64_TOOLCHAIN_PATH = '/home/light/DEMO/toolchain/loongarch_cross_tools'
         // All toolchain bins on PATH; same for every matrix cell (no per-arch selection).
         TOOLCHAIN_PATHS = "${env.RISCV_TOOLCHAIN_PATH}/bin:${env.AARCH64_TOOLCHAIN_PATH}/bin:${env.LOONGARCH64_TOOLCHAIN_PATH}/bin"
+        TFTP_DIR = '/home/light/tftp'
+        PYTHONDONTWRITEBYTECODE = '1'
     }
 
     stages {
@@ -275,6 +282,7 @@ pipeline {
                             'x86_64/ecx-2300f-peg',
                             'x86_64/nuc14mnk',
                             'x86_64/qemu',
+                            'x86_64/qemu_asterinas',
                         )
                     }
                 }
@@ -295,18 +303,20 @@ pipeline {
                                 script {
                                     def bid = parseBid(env.BID)
                                     def arch = bid.arch
-                                    def board = bid.board
+                                    // BID may name a test variant (qemu_asterinas); platform_board selects the actual make/platform board (qemu).
+                                    def bidCfg = getBidConfig(loadCiYaml(), env.BID)
+                                    def board = platformBoard(env.BID, bidCfg?.platform_board?.toString() ?: '')
                                     echo "Compile hvisor [BID=${env.BID}, ARCH=${arch}, BOARD=${board}]"
                                     sh kconfigSetupShell(arch, board)
                                     if (arch != 'x86_64') {
                                         sh """
                                             ${toolchainPathShell()}
-                                            make dtb ARCH=${arch} BOARD=${board}
+                                            make dtb ARCH=${arch} BOARD=${board} BID=
                                         """
                                     }
                                     sh """
                                         ${toolchainPathShell()}
-                                        make all ARCH=${arch} BOARD=${board} MODE=release
+                                        make all ARCH=${arch} BOARD=${board} MODE=release BID=
                                     """
                                 }
                             }
@@ -361,9 +371,11 @@ pipeline {
                                     def buildArgs = parseCiBuildArgs(bidCfg)
                                     def bidParsed = parseBid(env.BID)
                                     def arch = bidParsed.arch
-                                    def board = bidParsed.board
+                                    // Keep the server artifact BID separate from the real platform board used by make and prepare.sh.
+                                    def board = platformBoard(env.BID, bidCfg?.platform_board?.toString() ?: '')
                                     def kdir = (buildArgs.KDIR ?: '').toString()
                                     def testsCfg = bidCfg.tests ?: [:]
+                                    def artifactDir = testsCfg.artifact_dir ?: bidParsed.board
                                     def mode = (testsCfg.mode ?: '').toString().trim()
                                     if (!kdir || !mode) {
                                         error("jenkins/ci.yaml BID=${env.BID}: tests.mode and build_args KDIR are required")
@@ -371,11 +383,17 @@ pipeline {
 
                                     if (mode == 'qemu') {
                                         def prepareScript = "jenkins/prepare.sh"
-                                        def externalFile = "${env.TEST_IMG_BASE}/${arch}/${board}"
+                                        def externalFile = "${env.TEST_IMG_BASE}/${arch}/${artifactDir}"
                                         def configure = "./platform/${arch}/${board}/"
                                         echo "Prepare rootfs [BID=${env.BID}]"
                                         sh """
                                             cp -r ${externalFile}/* ${configure}
+                                            if [ "${artifactDir}" != "${board}" ]; then
+                                                mkdir -p "${configure}/image/kernel" "${configure}/image/virtdisk"
+                                                cp "${env.TEST_IMG_BASE}/${arch}/${board}/image/kernel/setup.bin" "${configure}/image/kernel/setup.bin"
+                                                cp "${env.TEST_IMG_BASE}/${arch}/${board}/image/kernel/vmlinux.bin" "${configure}/image/kernel/vmlinux.bin"
+                                                cp "${env.TEST_IMG_BASE}/${arch}/${board}/image/virtdisk/rootfs1.img" "${configure}/image/virtdisk/rootfs1.img"
+                                            fi
                                             chmod +x "${prepareScript}"
                                             sudo -E env \\
                                                 ARCH="${arch}" \\
@@ -386,8 +404,47 @@ pipeline {
                                                 "${prepareScript}"
                                         """
                                     } else if (mode == 'board') {
-                                        // Placeholder for future board artifact distribution by network.
-                                        echo "Board prepare placeholder [BID=${env.BID}]"
+                                        def tftpDir = (testsCfg.tftp_dir ?: env.TFTP_DIR).toString()
+                                        def zone0Dtbs = testsCfg.zone0_dtbs ?: []
+                                        if (testsCfg.zone0_dtb) {
+                                            zone0Dtbs = [testsCfg.zone0_dtb]
+                                        }
+                                        def zone0Image = (testsCfg.zone0_image ?: "${kdir}/arch/arm64/boot/Image").toString()
+                                        echo "Deploy TFTP artifacts [BID=${env.BID}, TFTP_DIR=${tftpDir}]"
+                                        sh """
+                                            export TERM=\${TERM:-xterm}
+                                            ${toolchainPathShell()}
+                                            tftp_staging="\$(pwd)/.tftp-staging"
+                                            rm -rf "\${tftp_staging}"
+                                            make cp ARCH=${arch} BOARD=${board} MODE=release TFTP_DIR="\${tftp_staging}"
+                                            test -f "\${tftp_staging}/hvisor.bin"
+                                            sudo mkdir -p "${tftpDir}"
+                                            sudo find "${tftpDir}" -mindepth 1 -maxdepth 1 -type f -delete
+                                            sudo cp "\${tftp_staging}/hvisor.bin" "${tftpDir}/"
+                                            test -f "${tftpDir}/hvisor.bin" || {
+                                                echo "error: hvisor.bin missing in ${tftpDir}" >&2
+                                                exit 1
+                                            }
+                                        """
+                                        zone0Dtbs.each { dtb ->
+                                            sh """
+                                                test -f "${dtb}"
+                                                sudo cp "${dtb}" "${tftpDir}/"
+                                            """
+                                        }
+                                        sh """
+                                            test -f "${zone0Image}" || {
+                                                echo "error: zone0 kernel Image not found: ${zone0Image}" >&2
+                                                exit 1
+                                            }
+                                            sudo cp "${zone0Image}" "${tftpDir}/Image"
+                                            test -f "${tftpDir}/Image" || {
+                                                echo "error: Image missing in ${tftpDir}" >&2
+                                                exit 1
+                                            }
+                                            sudo chmod -R a+rX "${tftpDir}"
+                                            ls -la "${tftpDir}"
+                                        """
                                     } else {
                                         error("jenkins/ci.yaml BID=${env.BID}: unsupported tests.mode='${mode}'")
                                     }
@@ -403,14 +460,24 @@ pipeline {
                         steps {
                             dir(matrixCellDir()) {
                                 script {
-                                    echo "Run tests via ci_runner [BID=${env.BID}]"
-                                    sh """
-                                        export TERM=\${TERM:-xterm}
-                                        ${toolchainPathShell()}
-                                        ${qemuPathShell()}
-                                        python3 jenkins/ci_runner.py \
-                                            --bid "${env.BID}"
-                                    """
+                                    def bidCfg = getBidConfig(loadCiYaml(), env.BID)
+                                    def mode = (bidCfg.tests?.mode ?: '').toString().trim()
+                                    echo "Run tests via ci_runner [BID=${env.BID}, mode=${mode}]"
+                                    if (mode == 'board') {
+                                        sh """
+                                            export TERM=\${TERM:-xterm}
+                                            sudo -E python3 jenkins/ci_runner.py \
+                                                --bid "${env.BID}"
+                                        """
+                                    } else {
+                                        sh """
+                                            export TERM=\${TERM:-xterm}
+                                            ${toolchainPathShell()}
+                                            ${qemuPathShell()}
+                                            python3 jenkins/ci_runner.py \
+                                                --bid "${env.BID}"
+                                        """
+                                    }
                                 }
                             }
                         }

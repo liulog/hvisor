@@ -169,10 +169,21 @@ impl ArchCpu {
 
     pub fn init_interrupt(&self) {
         // Used before enter into VM.
-        set_csr!(CSR_HIDELEG, 1 << 2 | 1 << 6 | 1 << 10); // HIDELEG_VSSI | HIDELEG_VSTI | HIDELEG_VSEI
-                                                          // Note: Breakpoint exception is temporarily needed.
-                                                          // TODO: This is need to be checked in the future.
-        set_csr!(CSR_HEDELEG, 1 << 3 | 1 << 8 | 1 << 12 | 1 << 13 | 1 << 15); // HEDELEG_ECU | HEDELEG_IPF | HEDELEG_LPF | HEDELEG_SPF
+        // HIDELEG_VSSI | HIDELEG_VSTI | HIDELEG_VSEI
+        set_csr!(CSR_HIDELEG, 1 << 2 | 1 << 6 | 1 << 10);
+        // Linux uses an illegal-instruction trap on the first Vector use of an allowed user thread while vsstatus.VS is Off,
+        // then allocates and enables the thread's Vector context. Delegate the exception so the guest handles this first-use path.
+        // Delegated synchronous exceptions in HEDELEG:
+        //   bit 2  - Illegal instruction
+        //   bit 3  - Breakpoint
+        //   bit 8  - Environment call from U-mode or VU-mode
+        //   bit 12 - Instruction page fault
+        //   bit 13 - Load page fault
+        //   bit 15 - Store/AMO page fault
+        set_csr!(
+            CSR_HEDELEG,
+            1 << 2 | 1 << 3 | 1 << 8 | 1 << 12 | 1 << 13 | 1 << 15
+        );
         set_csr!(CSR_SIE, 1 << 9 | 1 << 5 | 1 << 1); // Enable all interrupts (SEIE STIE SSIE).
     }
 

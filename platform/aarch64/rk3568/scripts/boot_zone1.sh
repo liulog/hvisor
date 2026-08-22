@@ -1,11 +1,10 @@
 #!/bin/bash
 
-insmod hvisor.ko
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-rm nohup.out
+insmod hvisor.ko 2>/dev/null || true
+mount -t proc proc /proc 2>/dev/null || true
+mount -t sysfs sysfs /sys 2>/dev/null || true
+rm -f nohup.out
 mkdir -p /dev/pts
-mount -t devpts devpts /dev/pts
+mount -t devpts devpts /dev/pts 2>/dev/null || true
 nohup ./hvisor virtio start virtio.json &
-./hvisor zone start linux2.json && \
-cat nohup.out | grep "char device"
+./hvisor zone start linux2.json

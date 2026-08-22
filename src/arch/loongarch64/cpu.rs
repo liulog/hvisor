@@ -71,15 +71,18 @@ impl ArchCpu {
         for i in 0..32 {
             self.ctx.x[i] = 0;
         }
-        // set all zone's GCSR.CPUID to 0 beacuse linux running on it will believe it's CPU0
-        // - wheatfox 2025.5.20
-        self.ctx.gcsr_cpuid = 0;
+        let physical_cpu = this_cpu_data().id;
+        self.ctx.gcsr_cpuid = this_cpu_data()
+            .zone
+            .as_ref()
+            .and_then(|zone| zone.read().phys_to_guest_cpu(physical_cpu))
+            .unwrap_or(0);
         info!(
             "[[CPU virtualization]] CPU{} run@{:#x}",
             self.get_cpuid(),
             self.ctx.sepc
         );
-        info!("loongarch64: @{:#x?}", self);
+        debug!("loongarch64: @{:#x?}", self);
         // step 1: enable guest mode
         // step 2: set guest entry to era
         // step 3: run ertn and enter guest mode
@@ -114,8 +117,6 @@ impl ArchCpu {
         }
 
         super::trap::_vcpu_return(ctx_addr as usize);
-
-        panic!("loongarch64: ArchCpu::run: unreachable");
     }
     pub fn idle(&mut self) -> ! {
         let ctx_addr = &mut self.ctx as *mut ZoneContext;
@@ -133,6 +134,9 @@ impl ArchCpu {
         this_cpu_data().vcpu_state.store(VcpuState::Stopped);
         // enable ipi on ecfg
         ecfg_ipi_enable();
+        // The trap vector is installed with interrupts disabled. Enable them only
+        // after this CPU has valid trap context and stack pointers in SAVE3/SAVE4.
+        super::trap::enable_global_interrupt();
         loop {}
     }
 }

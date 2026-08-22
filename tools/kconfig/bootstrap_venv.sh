@@ -11,9 +11,11 @@ if [[ ! -f "${REQ}" ]]; then
 	exit 1
 fi
 
-if [[ -x "${VENV}/bin/python" ]] && "${VENV}/bin/python" -c "import kconfiglib" 2>/dev/null; then
+if [[ -x "${VENV}/bin/python" ]] && "${VENV}/bin/python" -c 'import kconfiglib, sys; __import__("tomllib" if sys.version_info >= (3, 11) else "tomli")' 2>/dev/null; then
 	exit 0
 fi
 
-python3 -m venv "${VENV}"
+if [[ ! -x "${VENV}/bin/pip" ]]; then
+	python3 -m venv "${VENV}"
+fi
 "${VENV}/bin/pip" install -q -r "${REQ}"
